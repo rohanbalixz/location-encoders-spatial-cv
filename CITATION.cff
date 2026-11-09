@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use these splits or results, please cite this repository and the TTE paper."
+title: "Spatial-block evaluation of frozen location encoders"
+authors:
+  - family-names: Bali
+    given-names: Rohan
+date-released: 2026-11-08
+license: MIT
+repository-code: "https://github.com/rohanbalixz/location-encoders-spatial-cv"
+references:
+  - type: conference-paper
+    title: "Tessellating the Earth: Learnable Spherical Voronoi Partitions for Location Encoding"
+    authors:
+      - family-names: Cher
+        given-names: Daniel
+      - family-names: Iqbal
+        given-names: Hamza
+      - family-names: Xing
+        given-names: Eric
+      - family-names: Wei
+        given-names: Brian
+      - family-names: Jacobs
+        given-names: Nathan
+    collection-title: "European Conference on Computer Vision (ECCV)"
+    year: 2026

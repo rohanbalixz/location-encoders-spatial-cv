@@ -1,0 +1,12 @@
+# downloaded or generated, rebuilt by the scripts
+data/
+external/
+tools/
+.venv/
+outputs/points/
+__pycache__/
+*.pyc
+.DS_Store
+
+# run logs
+outputs/log_*.txt

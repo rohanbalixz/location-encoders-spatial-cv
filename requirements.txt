@@ -1,0 +1,21 @@
+# Python 3.11. These are the versions the results in outputs/ were produced with.
+# TTE itself is loaded from external/TTE (git clone, see README); its inference code needs only torch,
+# numpy and huggingface_hub.
+torch==2.5.1
+numpy==2.4.6
+pandas==3.1.1
+scipy==1.17.1
+scikit-learn==1.9.1
+joblib==1.6.0
+huggingface_hub==2.4.0
+safetensors==0.8.0
+einops==0.8.2
+sympy==1.13.1
+tqdm==4.70.1
+matplotlib==3.11.2
+geopandas==1.2.0
+shapely==2.2.0
+pyogrio==0.13.0
+rasterio==1.4.4
+h3==4.5.0
+pyarrow==26.0.1
