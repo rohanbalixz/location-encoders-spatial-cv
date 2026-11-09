@@ -284,100 +284,100 @@ The drop from the random split to blocks has two parts. The **distance** part is
 
 ## E3a/b/d: does the TTE lead survive a change of probe?
 
-Same embeddings, same folds. TTE, SatCLIP L40 and gap (TTE minus SatCLIP L40) are means over all grid offsets (blocks) or seeds (random); 'ahead' counts the offsets or seeds where TTE scores higher. The CI is the 95% block bootstrap on offset 0 alone (seed 42 for random, by point), so it need not contain the mean gap. kNN on raw coordinates is the lookup baseline.
+Same embeddings, same folds. TTE, SatCLIP L40 and the mean gap (TTE minus SatCLIP L40) are means over all grid offsets (blocks) or seeds (random); 'ahead' counts the offsets or seeds where TTE scores higher. The last gap column is offset 0 alone (seed 42 for random), next to its own 95% block-bootstrap CI (by point for random). kNN on raw coordinates is the lookup baseline.
 
-| task | split | probe | TTE | SatCLIP L40 | gap | 95% CI | ahead | kNN on coords |
+| task | split | probe | TTE | SatCLIP L40 | gap, mean | ahead | gap, offset 0 [95% CI] | kNN on coords |
 |---|---|---|---|---|---|---|---|---|
-| Biome (acc) | random | ridge (paper protocol) | 86.6 | 80.7 | 5.9 | [5.4, 6.7] | 5/5 | 92.3 |
-| Biome (acc) | random | kNN on embeddings | 92.5 | 92.8 | -0.3 | [-0.9, -0.1] | 0/5 | 92.3 |
-| Biome (acc) | random | MLP, untuned defaults | 88.2 | 89.5 | -1.3 | [-1.0, 0.0] | 0/5 | 92.3 |
-| Biome (acc) | 100 km | ridge (paper protocol) | 86.0 | 80.1 | 5.9 | [5.5, 6.4] | 5/5 | 89.3 |
-| Biome (acc) | 100 km | ridge, wide α, spatial inner CV | 86.3 | 80.2 | 6.1 | [5.6, 6.6] | 5/5 | 89.3 |
-| Biome (acc) | 100 km | kNN on embeddings | 90.0 | 90.1 | -0.1 | [-0.3, 0.2] | 1/5 | 89.3 |
-| Biome (acc) | 100 km | MLP, untuned defaults | 87.6 | 87.8 | -0.3 | [-0.6, 0.0] | 0/3 | 89.3 |
-| Biome (acc) | 250 km | ridge (paper protocol) | 84.9 | 78.2 | 6.7 | [6.0, 7.7] | 5/5 | 85.9 |
-| Biome (acc) | 250 km | ridge, wide α, spatial inner CV | 85.2 | 78.2 | 7.0 | [6.2, 7.9] | 5/5 | 85.9 |
-| Biome (acc) | 250 km | kNN on embeddings | 87.5 | 87.5 | 0.1 | [-0.1, 0.5] | 4/5 | 85.9 |
-| Biome (acc) | 1000 km | ridge (paper protocol) | 79.7 | 69.7 | 10.0 | [7.0, 10.7] | 5/5 | 75.6 |
-| Biome (acc) | 1000 km | ridge, wide α, spatial inner CV | 79.6 | 70.4 | 9.3 | [6.4, 10.4] | 5/5 | 75.6 |
-| Biome (acc) | 1000 km | kNN on embeddings | 80.4 | 79.5 | 0.9 | [0.1, 1.7] | 5/5 | 75.6 |
-| Biome (acc) | 1000 km | MLP, untuned defaults | 80.6 | 77.1 | 3.4 | [1.7, 4.1] | 3/3 | 75.6 |
-| Biome (acc) | 1000 km | MLP, tuned (grouped inner CV) | 81.0 | 79.2 | 1.7 | [0.5, 2.8] | 5/5 | 75.6 |
-| EcoRegion (acc) | random | ridge (paper protocol) | 71.8 | 67.6 | 4.1 | [4.0, 5.4] | 5/5 | 85.9 |
-| EcoRegion (acc) | random | kNN on embeddings | 85.8 | 86.3 | -0.5 | [-0.7, 0.1] | 0/5 | 85.9 |
-| EcoRegion (acc) | 100 km | ridge (paper protocol) | 69.4 | 64.2 | 5.2 | [4.7, 5.7] | 5/5 | 79.2 |
-| EcoRegion (acc) | 100 km | kNN on embeddings | 79.9 | 80.3 | -0.4 | [-0.5, 0.1] | 0/5 | 79.2 |
-| EcoRegion (acc) | 250 km | ridge (paper protocol) | 65.0 | 56.2 | 8.7 | [8.6, 10.3] | 5/5 | 71.6 |
-| EcoRegion (acc) | 250 km | kNN on embeddings | 73.6 | 73.7 | -0.2 | [-0.6, 0.3] | 0/5 | 71.6 |
-| EcoRegion (acc) | 1000 km | ridge (paper protocol) | 48.1 | 30.7 | 17.5 | [14.3, 18.0] | 5/5 | 50.5 |
-| EcoRegion (acc) | 1000 km | kNN on embeddings | 54.5 | 52.1 | 2.4 | [1.2, 3.1] | 5/5 | 50.5 |
-| Country (acc) | random | ridge (paper protocol) | 91.7 | 81.2 | 10.4 | [10.1, 11.4] | 5/5 | 97.2 |
-| Country (acc) | random | kNN on embeddings | 96.8 | 97.1 | -0.3 | [-0.8, -0.2] | 0/5 | 97.2 |
-| Country (acc) | 100 km | ridge (paper protocol) | 90.7 | 79.3 | 11.4 | [10.8, 11.9] | 5/5 | 95.5 |
-| Country (acc) | 100 km | kNN on embeddings | 94.7 | 95.2 | -0.5 | [-0.7, -0.4] | 0/5 | 95.5 |
-| Country (acc) | 250 km | ridge (paper protocol) | 88.3 | 72.8 | 15.6 | [14.5, 16.8] | 5/5 | 92.7 |
-| Country (acc) | 250 km | kNN on embeddings | 91.7 | 92.4 | -0.7 | [-1.2, -0.7] | 0/5 | 92.7 |
-| Country (acc) | 1000 km | ridge (paper protocol) | 78.1 | 51.1 | 27.0 | [21.9, 27.9] | 5/5 | 81.4 |
-| Country (acc) | 1000 km | kNN on embeddings | 79.2 | 76.6 | 2.6 | [2.5, 4.8] | 5/5 | 81.4 |
-| Temperature (R²) | random | ridge (paper protocol) | 0.978 | 0.890 | 0.088 | [0.086, 0.093] | 5/5 | 0.993 |
-| Temperature (R²) | random | kNN on embeddings | 0.994 | 0.994 | -0.000 | [-0.001, 0.000] | 1/5 | 0.993 |
-| Temperature (R²) | random | MLP, untuned defaults | 0.986 | 0.984 | 0.003 | [0.000, 0.001] | 5/5 | 0.993 |
-| Temperature (R²) | 100 km | ridge (paper protocol) | 0.976 | 0.885 | 0.092 | [0.088, 0.095] | 5/5 | 0.988 |
-| Temperature (R²) | 100 km | ridge, wide α, spatial inner CV | 0.977 | 0.885 | 0.092 | [0.089, 0.095] | 5/5 | 0.988 |
-| Temperature (R²) | 100 km | kNN on embeddings | 0.990 | 0.990 | -0.000 | [-0.000, 0.000] | 1/5 | 0.988 |
-| Temperature (R²) | 100 km | MLP, untuned defaults | 0.986 | 0.982 | 0.004 | [0.003, 0.004] | 3/3 | 0.988 |
-| Temperature (R²) | 250 km | ridge (paper protocol) | 0.973 | 0.873 | 0.101 | [0.094, 0.107] | 5/5 | 0.981 |
-| Temperature (R²) | 250 km | ridge, wide α, spatial inner CV | 0.974 | 0.874 | 0.100 | [0.094, 0.107] | 5/5 | 0.981 |
-| Temperature (R²) | 250 km | kNN on embeddings | 0.985 | 0.985 | 0.000 | [-0.001, 0.000] | 4/5 | 0.981 |
-| Temperature (R²) | 1000 km | ridge (paper protocol) | 0.951 | 0.823 | 0.127 | [0.114, 0.173] | 5/5 | 0.947 |
-| Temperature (R²) | 1000 km | ridge, wide α, spatial inner CV | 0.950 | 0.831 | 0.120 | [0.108, 0.172] | 5/5 | 0.947 |
-| Temperature (R²) | 1000 km | kNN on embeddings | 0.968 | 0.961 | 0.007 | [0.005, 0.012] | 5/5 | 0.947 |
-| Temperature (R²) | 1000 km | MLP, untuned defaults | 0.967 | 0.954 | 0.014 | [0.009, 0.020] | 3/3 | 0.947 |
-| Temperature (R²) | 1000 km | MLP, tuned (grouped inner CV) | 0.970 | 0.966 | 0.005 | [0.003, 0.010] | 4/5 | 0.947 |
-| Elevation (R²) | random | ridge (paper protocol) | 0.872 | 0.704 | 0.168 | [0.158, 0.177] | 5/5 | 0.946 |
-| Elevation (R²) | random | kNN on embeddings | 0.950 | 0.952 | -0.002 | [-0.004, 0.001] | 0/5 | 0.946 |
-| Elevation (R²) | random | MLP, untuned defaults | 0.907 | 0.905 | 0.003 | [0.001, 0.008] | 4/5 | 0.946 |
-| Elevation (R²) | 100 km | ridge (paper protocol) | 0.867 | 0.699 | 0.168 | [0.160, 0.177] | 5/5 | 0.902 |
-| Elevation (R²) | 100 km | ridge, wide α, spatial inner CV | 0.869 | 0.699 | 0.170 | [0.162, 0.179] | 5/5 | 0.902 |
-| Elevation (R²) | 100 km | kNN on embeddings | 0.921 | 0.921 | 0.000 | [-0.003, 0.002] | 2/5 | 0.902 |
-| Elevation (R²) | 100 km | MLP, untuned defaults | 0.896 | 0.896 | 0.000 | [-0.001, 0.005] | 1/3 | 0.902 |
-| Elevation (R²) | 250 km | ridge (paper protocol) | 0.855 | 0.673 | 0.182 | [0.166, 0.203] | 5/5 | 0.838 |
-| Elevation (R²) | 250 km | ridge, wide α, spatial inner CV | 0.855 | 0.673 | 0.181 | [0.166, 0.202] | 5/5 | 0.838 |
-| Elevation (R²) | 250 km | kNN on embeddings | 0.887 | 0.883 | 0.004 | [-0.004, 0.004] | 4/5 | 0.838 |
-| Elevation (R²) | 1000 km | ridge (paper protocol) | 0.788 | 0.571 | 0.217 | [0.161, 0.258] | 5/5 | 0.576 |
-| Elevation (R²) | 1000 km | ridge, wide α, spatial inner CV | 0.793 | 0.581 | 0.211 | [0.157, 0.231] | 5/5 | 0.576 |
-| Elevation (R²) | 1000 km | kNN on embeddings | 0.796 | 0.766 | 0.030 | [0.026, 0.094] | 5/5 | 0.576 |
-| Elevation (R²) | 1000 km | MLP, untuned defaults | 0.855 | 0.802 | 0.053 | [0.034, 0.101] | 3/3 | 0.576 |
-| Elevation (R²) | 1000 km | MLP, tuned (grouped inner CV) | 0.854 | 0.805 | 0.048 | [0.037, 0.101] | 5/5 | 0.576 |
-| Population (R²) | random | ridge (paper protocol) | 0.648 | 0.566 | 0.082 | [0.077, 0.094] | 5/5 | 0.732 |
-| Population (R²) | random | kNN on embeddings | 0.730 | 0.732 | -0.002 | [-0.005, 0.001] | 0/5 | 0.732 |
-| Population (R²) | random | MLP, untuned defaults | 0.668 | 0.665 | 0.002 | [0.010, 0.021] | 3/5 | 0.732 |
-| Population (R²) | 100 km | ridge (paper protocol) | 0.641 | 0.557 | 0.084 | [0.078, 0.090] | 5/5 | 0.682 |
-| Population (R²) | 100 km | ridge, wide α, spatial inner CV | 0.641 | 0.557 | 0.084 | [0.078, 0.090] | 5/5 | 0.682 |
-| Population (R²) | 100 km | kNN on embeddings | 0.682 | 0.686 | -0.004 | [-0.007, -0.002] | 0/5 | 0.682 |
-| Population (R²) | 100 km | MLP, untuned defaults | 0.661 | 0.656 | 0.005 | [0.001, 0.008] | 3/3 | 0.682 |
-| Population (R²) | 250 km | ridge (paper protocol) | 0.628 | 0.540 | 0.088 | [0.075, 0.094] | 5/5 | 0.629 |
-| Population (R²) | 250 km | ridge, wide α, spatial inner CV | 0.629 | 0.543 | 0.086 | [0.075, 0.093] | 5/5 | 0.629 |
-| Population (R²) | 250 km | kNN on embeddings | 0.640 | 0.642 | -0.001 | [-0.006, 0.003] | 0/5 | 0.629 |
-| Population (R²) | 1000 km | ridge (paper protocol) | 0.572 | 0.492 | 0.080 | [0.057, 0.098] | 5/5 | 0.484 |
-| Population (R²) | 1000 km | ridge, wide α, spatial inner CV | 0.595 | 0.515 | 0.080 | [0.066, 0.100] | 5/5 | 0.484 |
-| Population (R²) | 1000 km | kNN on embeddings | 0.548 | 0.548 | 0.000 | [-0.018, 0.010] | 3/5 | 0.484 |
-| Population (R²) | 1000 km | MLP, untuned defaults | 0.623 | 0.593 | 0.030 | [0.023, 0.053] | 3/3 | 0.484 |
-| Population (R²) | 1000 km | MLP, tuned (grouped inner CV) | 0.621 | 0.598 | 0.023 | [0.013, 0.042] | 5/5 | 0.484 |
-| California housing (R²) | random | ridge (paper protocol) | 0.526 | 0.396 | 0.130 | [0.119, 0.143] | 5/5 | 0.777 |
-| California housing (R²) | random | kNN on embeddings | 0.766 | 0.774 | -0.009 | [-0.012, -0.005] | 0/5 | 0.777 |
-| California housing (R²) | random | MLP, untuned defaults | 0.466 | 0.487 | -0.020 | [0.008, 0.027] | 1/5 | 0.777 |
-| California housing (R²) | 25 km | ridge (paper protocol) | 0.290 | 0.274 | 0.016 | [-0.081, 0.066] | 5/5 | 0.406 |
-| California housing (R²) | 25 km | ridge, wide α, spatial inner CV | 0.273 | 0.268 | 0.005 | [-0.050, 0.011] | 2/5 | 0.406 |
-| California housing (R²) | 25 km | kNN on embeddings | 0.328 | 0.377 | -0.049 | [-0.090, -0.019] | 0/5 | 0.406 |
-| California housing (R²) | 100 km | ridge (paper protocol) | 0.060 | 0.102 | -0.042 | [-0.117, 0.017] | 2/5 | 0.080 |
-| California housing (R²) | 100 km | ridge, wide α, spatial inner CV | 0.166 | 0.111 | 0.055 | [-0.068, 0.029] | 2/5 | 0.080 |
-| California housing (R²) | 100 km | kNN on embeddings | -0.039 | 0.001 | -0.039 | [-0.084, 0.018] | 1/5 | 0.080 |
-| California housing (R²) | 100 km | MLP, untuned defaults | -0.228 | -0.298 | 0.070 | [-0.121, 0.452] | 3/3 | 0.080 |
+| Biome (acc) | random | ridge (paper protocol) | 86.6 | 80.7 | 5.9 | 5/5 | 6.1 [5.4, 6.7] | 92.3 |
+| Biome (acc) | random | kNN on embeddings | 92.5 | 92.8 | -0.3 | 0/5 | -0.5 [-0.9, -0.1] | 92.3 |
+| Biome (acc) | random | MLP, untuned defaults | 88.2 | 89.5 | -1.3 | 0/5 | -0.5 [-1.0, 0.0] | 92.3 |
+| Biome (acc) | 100 km | ridge (paper protocol) | 86.0 | 80.1 | 5.9 | 5/5 | 5.9 [5.5, 6.4] | 89.3 |
+| Biome (acc) | 100 km | ridge, wide α, spatial inner CV | 86.3 | 80.2 | 6.1 | 5/5 | 6.1 [5.6, 6.6] | 89.3 |
+| Biome (acc) | 100 km | kNN on embeddings | 90.0 | 90.1 | -0.1 | 1/5 | -0.0 [-0.3, 0.2] | 89.3 |
+| Biome (acc) | 100 km | MLP, untuned defaults | 87.6 | 87.8 | -0.3 | 0/3 | -0.3 [-0.6, 0.0] | 89.3 |
+| Biome (acc) | 250 km | ridge (paper protocol) | 84.9 | 78.2 | 6.7 | 5/5 | 6.9 [6.0, 7.7] | 85.9 |
+| Biome (acc) | 250 km | ridge, wide α, spatial inner CV | 85.2 | 78.2 | 7.0 | 5/5 | 7.1 [6.2, 7.9] | 85.9 |
+| Biome (acc) | 250 km | kNN on embeddings | 87.5 | 87.5 | 0.1 | 4/5 | 0.2 [-0.1, 0.5] | 85.9 |
+| Biome (acc) | 1000 km | ridge (paper protocol) | 79.7 | 69.7 | 10.0 | 5/5 | 8.8 [7.0, 10.7] | 75.6 |
+| Biome (acc) | 1000 km | ridge, wide α, spatial inner CV | 79.6 | 70.4 | 9.3 | 5/5 | 8.5 [6.4, 10.4] | 75.6 |
+| Biome (acc) | 1000 km | kNN on embeddings | 80.4 | 79.5 | 0.9 | 5/5 | 0.9 [0.1, 1.7] | 75.6 |
+| Biome (acc) | 1000 km | MLP, untuned defaults | 80.6 | 77.1 | 3.4 | 3/3 | 2.9 [1.7, 4.1] | 75.6 |
+| Biome (acc) | 1000 km | MLP, tuned (grouped inner CV) | 81.0 | 79.2 | 1.7 | 5/5 | 1.7 [0.5, 2.8] | 75.6 |
+| EcoRegion (acc) | random | ridge (paper protocol) | 71.8 | 67.6 | 4.1 | 5/5 | 4.7 [4.0, 5.4] | 85.9 |
+| EcoRegion (acc) | random | kNN on embeddings | 85.8 | 86.3 | -0.5 | 0/5 | -0.3 [-0.7, 0.1] | 85.9 |
+| EcoRegion (acc) | 100 km | ridge (paper protocol) | 69.4 | 64.2 | 5.2 | 5/5 | 5.2 [4.7, 5.7] | 79.2 |
+| EcoRegion (acc) | 100 km | kNN on embeddings | 79.9 | 80.3 | -0.4 | 0/5 | -0.2 [-0.5, 0.1] | 79.2 |
+| EcoRegion (acc) | 250 km | ridge (paper protocol) | 65.0 | 56.2 | 8.7 | 5/5 | 9.4 [8.6, 10.3] | 71.6 |
+| EcoRegion (acc) | 250 km | kNN on embeddings | 73.6 | 73.7 | -0.2 | 0/5 | -0.1 [-0.6, 0.3] | 71.6 |
+| EcoRegion (acc) | 1000 km | ridge (paper protocol) | 48.1 | 30.7 | 17.5 | 5/5 | 16.1 [14.3, 18.0] | 50.5 |
+| EcoRegion (acc) | 1000 km | kNN on embeddings | 54.5 | 52.1 | 2.4 | 5/5 | 2.1 [1.2, 3.1] | 50.5 |
+| Country (acc) | random | ridge (paper protocol) | 91.7 | 81.2 | 10.4 | 5/5 | 10.8 [10.1, 11.4] | 97.2 |
+| Country (acc) | random | kNN on embeddings | 96.8 | 97.1 | -0.3 | 0/5 | -0.5 [-0.8, -0.2] | 97.2 |
+| Country (acc) | 100 km | ridge (paper protocol) | 90.7 | 79.3 | 11.4 | 5/5 | 11.4 [10.8, 11.9] | 95.5 |
+| Country (acc) | 100 km | kNN on embeddings | 94.7 | 95.2 | -0.5 | 0/5 | -0.5 [-0.7, -0.4] | 95.5 |
+| Country (acc) | 250 km | ridge (paper protocol) | 88.3 | 72.8 | 15.6 | 5/5 | 15.7 [14.5, 16.8] | 92.7 |
+| Country (acc) | 250 km | kNN on embeddings | 91.7 | 92.4 | -0.7 | 0/5 | -0.9 [-1.2, -0.7] | 92.7 |
+| Country (acc) | 1000 km | ridge (paper protocol) | 78.1 | 51.1 | 27.0 | 5/5 | 24.9 [21.9, 27.9] | 81.4 |
+| Country (acc) | 1000 km | kNN on embeddings | 79.2 | 76.6 | 2.6 | 5/5 | 3.6 [2.5, 4.8] | 81.4 |
+| Temperature (R²) | random | ridge (paper protocol) | 0.978 | 0.890 | 0.088 | 5/5 | 0.089 [0.086, 0.093] | 0.993 |
+| Temperature (R²) | random | kNN on embeddings | 0.994 | 0.994 | -0.000 | 1/5 | -0.000 [-0.001, 0.000] | 0.993 |
+| Temperature (R²) | random | MLP, untuned defaults | 0.986 | 0.984 | 0.003 | 5/5 | 0.001 [0.000, 0.001] | 0.993 |
+| Temperature (R²) | 100 km | ridge (paper protocol) | 0.976 | 0.885 | 0.092 | 5/5 | 0.091 [0.088, 0.095] | 0.988 |
+| Temperature (R²) | 100 km | ridge, wide α, spatial inner CV | 0.977 | 0.885 | 0.092 | 5/5 | 0.092 [0.089, 0.095] | 0.988 |
+| Temperature (R²) | 100 km | kNN on embeddings | 0.990 | 0.990 | -0.000 | 1/5 | -0.000 [-0.000, 0.000] | 0.988 |
+| Temperature (R²) | 100 km | MLP, untuned defaults | 0.986 | 0.982 | 0.004 | 3/3 | 0.004 [0.003, 0.004] | 0.988 |
+| Temperature (R²) | 250 km | ridge (paper protocol) | 0.973 | 0.873 | 0.101 | 5/5 | 0.101 [0.094, 0.107] | 0.981 |
+| Temperature (R²) | 250 km | ridge, wide α, spatial inner CV | 0.974 | 0.874 | 0.100 | 5/5 | 0.100 [0.094, 0.107] | 0.981 |
+| Temperature (R²) | 250 km | kNN on embeddings | 0.985 | 0.985 | 0.000 | 4/5 | -0.000 [-0.001, 0.000] | 0.981 |
+| Temperature (R²) | 1000 km | ridge (paper protocol) | 0.951 | 0.823 | 0.127 | 5/5 | 0.140 [0.114, 0.173] | 0.947 |
+| Temperature (R²) | 1000 km | ridge, wide α, spatial inner CV | 0.950 | 0.831 | 0.120 | 5/5 | 0.136 [0.108, 0.172] | 0.947 |
+| Temperature (R²) | 1000 km | kNN on embeddings | 0.968 | 0.961 | 0.007 | 5/5 | 0.008 [0.005, 0.012] | 0.947 |
+| Temperature (R²) | 1000 km | MLP, untuned defaults | 0.967 | 0.954 | 0.014 | 3/3 | 0.014 [0.009, 0.020] | 0.947 |
+| Temperature (R²) | 1000 km | MLP, tuned (grouped inner CV) | 0.970 | 0.966 | 0.005 | 4/5 | 0.006 [0.003, 0.010] | 0.947 |
+| Elevation (R²) | random | ridge (paper protocol) | 0.872 | 0.704 | 0.168 | 5/5 | 0.167 [0.158, 0.177] | 0.946 |
+| Elevation (R²) | random | kNN on embeddings | 0.950 | 0.952 | -0.002 | 0/5 | -0.002 [-0.004, 0.001] | 0.946 |
+| Elevation (R²) | random | MLP, untuned defaults | 0.907 | 0.905 | 0.003 | 4/5 | 0.004 [0.001, 0.008] | 0.946 |
+| Elevation (R²) | 100 km | ridge (paper protocol) | 0.867 | 0.699 | 0.168 | 5/5 | 0.168 [0.160, 0.177] | 0.902 |
+| Elevation (R²) | 100 km | ridge, wide α, spatial inner CV | 0.869 | 0.699 | 0.170 | 5/5 | 0.170 [0.162, 0.179] | 0.902 |
+| Elevation (R²) | 100 km | kNN on embeddings | 0.921 | 0.921 | 0.000 | 2/5 | -0.001 [-0.003, 0.002] | 0.902 |
+| Elevation (R²) | 100 km | MLP, untuned defaults | 0.896 | 0.896 | 0.000 | 1/3 | 0.002 [-0.001, 0.005] | 0.902 |
+| Elevation (R²) | 250 km | ridge (paper protocol) | 0.855 | 0.673 | 0.182 | 5/5 | 0.183 [0.166, 0.203] | 0.838 |
+| Elevation (R²) | 250 km | ridge, wide α, spatial inner CV | 0.855 | 0.673 | 0.181 | 5/5 | 0.183 [0.166, 0.202] | 0.838 |
+| Elevation (R²) | 250 km | kNN on embeddings | 0.887 | 0.883 | 0.004 | 4/5 | -0.000 [-0.004, 0.004] | 0.838 |
+| Elevation (R²) | 1000 km | ridge (paper protocol) | 0.788 | 0.571 | 0.217 | 5/5 | 0.200 [0.161, 0.258] | 0.576 |
+| Elevation (R²) | 1000 km | ridge, wide α, spatial inner CV | 0.793 | 0.581 | 0.211 | 5/5 | 0.189 [0.157, 0.231] | 0.576 |
+| Elevation (R²) | 1000 km | kNN on embeddings | 0.796 | 0.766 | 0.030 | 5/5 | 0.052 [0.026, 0.094] | 0.576 |
+| Elevation (R²) | 1000 km | MLP, untuned defaults | 0.855 | 0.802 | 0.053 | 3/3 | 0.060 [0.034, 0.101] | 0.576 |
+| Elevation (R²) | 1000 km | MLP, tuned (grouped inner CV) | 0.854 | 0.805 | 0.048 | 5/5 | 0.062 [0.037, 0.101] | 0.576 |
+| Population (R²) | random | ridge (paper protocol) | 0.648 | 0.566 | 0.082 | 5/5 | 0.086 [0.077, 0.094] | 0.732 |
+| Population (R²) | random | kNN on embeddings | 0.730 | 0.732 | -0.002 | 0/5 | -0.002 [-0.005, 0.001] | 0.732 |
+| Population (R²) | random | MLP, untuned defaults | 0.668 | 0.665 | 0.002 | 3/5 | 0.016 [0.010, 0.021] | 0.732 |
+| Population (R²) | 100 km | ridge (paper protocol) | 0.641 | 0.557 | 0.084 | 5/5 | 0.085 [0.078, 0.090] | 0.682 |
+| Population (R²) | 100 km | ridge, wide α, spatial inner CV | 0.641 | 0.557 | 0.084 | 5/5 | 0.084 [0.078, 0.090] | 0.682 |
+| Population (R²) | 100 km | kNN on embeddings | 0.682 | 0.686 | -0.004 | 0/5 | -0.005 [-0.007, -0.002] | 0.682 |
+| Population (R²) | 100 km | MLP, untuned defaults | 0.661 | 0.656 | 0.005 | 3/3 | 0.004 [0.001, 0.008] | 0.682 |
+| Population (R²) | 250 km | ridge (paper protocol) | 0.628 | 0.540 | 0.088 | 5/5 | 0.084 [0.075, 0.094] | 0.629 |
+| Population (R²) | 250 km | ridge, wide α, spatial inner CV | 0.629 | 0.543 | 0.086 | 5/5 | 0.084 [0.075, 0.093] | 0.629 |
+| Population (R²) | 250 km | kNN on embeddings | 0.640 | 0.642 | -0.001 | 0/5 | -0.002 [-0.006, 0.003] | 0.629 |
+| Population (R²) | 1000 km | ridge (paper protocol) | 0.572 | 0.492 | 0.080 | 5/5 | 0.077 [0.057, 0.098] | 0.484 |
+| Population (R²) | 1000 km | ridge, wide α, spatial inner CV | 0.595 | 0.515 | 0.080 | 5/5 | 0.082 [0.066, 0.100] | 0.484 |
+| Population (R²) | 1000 km | kNN on embeddings | 0.548 | 0.548 | 0.000 | 3/5 | -0.003 [-0.018, 0.010] | 0.484 |
+| Population (R²) | 1000 km | MLP, untuned defaults | 0.623 | 0.593 | 0.030 | 3/3 | 0.037 [0.023, 0.053] | 0.484 |
+| Population (R²) | 1000 km | MLP, tuned (grouped inner CV) | 0.621 | 0.598 | 0.023 | 5/5 | 0.027 [0.013, 0.042] | 0.484 |
+| California housing (R²) | random | ridge (paper protocol) | 0.526 | 0.396 | 0.130 | 5/5 | 0.132 [0.119, 0.143] | 0.777 |
+| California housing (R²) | random | kNN on embeddings | 0.766 | 0.774 | -0.009 | 0/5 | -0.009 [-0.012, -0.005] | 0.777 |
+| California housing (R²) | random | MLP, untuned defaults | 0.466 | 0.487 | -0.020 | 1/5 | 0.017 [0.008, 0.027] | 0.777 |
+| California housing (R²) | 25 km | ridge (paper protocol) | 0.290 | 0.274 | 0.016 | 5/5 | 0.002 [-0.081, 0.066] | 0.406 |
+| California housing (R²) | 25 km | ridge, wide α, spatial inner CV | 0.273 | 0.268 | 0.005 | 2/5 | -0.019 [-0.050, 0.011] | 0.406 |
+| California housing (R²) | 25 km | kNN on embeddings | 0.328 | 0.377 | -0.049 | 0/5 | -0.051 [-0.090, -0.019] | 0.406 |
+| California housing (R²) | 100 km | ridge (paper protocol) | 0.060 | 0.102 | -0.042 | 2/5 | -0.042 [-0.117, 0.017] | 0.080 |
+| California housing (R²) | 100 km | ridge, wide α, spatial inner CV | 0.166 | 0.111 | 0.055 | 2/5 | -0.013 [-0.068, 0.029] | 0.080 |
+| California housing (R²) | 100 km | kNN on embeddings | -0.039 | 0.001 | -0.039 | 1/5 | -0.031 [-0.084, 0.018] | 0.080 |
+| California housing (R²) | 100 km | MLP, untuned defaults | -0.228 | -0.298 | 0.070 | 3/3 | 0.085 [-0.121, 0.452] | 0.080 |
 
 ## Pre-registered rule: does 'TTE beats SatCLIP L40 under large blocks' hold under every probe?
 
-Rule (PREREGISTRATION.md): the sign must hold on every grid offset, under the ridge probe and the kNN probe, with the block-bootstrap CI excluding zero. Checked at 1000 km (global tasks) and 100 km (housing).
+Rule (PREREGISTRATION.md): the sign must hold on every grid offset, under the ridge probe and the kNN probe. Added after the pre-registration: the offset-0 block-bootstrap CI must also exclude zero. Checked at 1000 km (global tasks) and 100 km (housing).
 
 | task | ridge (paper protocol) | ridge, wide α, spatial inner CV | kNN on embeddings | MLP, untuned defaults | MLP, tuned (grouped inner CV) | rule met? |
 |---|---|---|---|---|---|---|

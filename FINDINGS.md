@@ -4,15 +4,27 @@ Rohan Bali, 7–8 November 2026. Ongoing work. Every number below is generated b
 
 ## Summary
 
-Under the linear probe used in TTE's own evaluation (`eval/eval_range.py`), TTE's lead over SatCLIP ViT16-L40 widens when whole regions are held out. For example, on Country it goes from +10.4 points on a random split to +27.0 at 1000 km blocks, positive on all 5 grid offsets.
+Under the linear probe used in TTE's own evaluation (`eval/eval_range.py`), TTE's lead over SatCLIP ViT16-L40 widens when whole regions are held out. Of the four tasks the pre-registered H1 named, it grows on three: Biome from +5.9 points on a random split to +10.0 at 1000 km blocks, Temperature from +0.088 to +0.127 R², and Elevation from +0.168 to +0.217 R², each positive on all 5 grid offsets. On Population it stays flat (+0.082 to +0.080).
 
 Most of that gap depends on the readout. With a kNN or MLP probe on the same frozen embeddings, the two encoders are indistinguishable on random splits and blocks up to 250 km. TTE keeps a smaller lead, but it is consistent at 1000 km: +0.9 to +2.6 points on the classification tasks under kNN (+1.7 on Biome under a tuned MLP), and +0.005 to +0.048 R² on Temperature, Elevation and Population under a tuned MLP. Under the pre-registered rule (every grid offset, under both ridge and kNN), with the added requirement that the block-bootstrap CI exclude zero, "TTE beats SatCLIP L40 under 1000 km blocks" holds on 5 of 7 tasks.
 
 The random split mostly measures interpolation. There, kNN on raw latitude/longitude beats every encoder read out by the linear probe, on every task.
 
-## 1. Reproduction gate (E0): passed
+## 1. Reproduction gate (E0): passed on 6 of 7 tasks
 
-California Housing is the only task with exactly the paper's data. There I get TTE 0.526 and SatCLIP L40 0.396, against the paper's 0.532 and 0.400. The other six tasks use labels rebuilt from public sources (Ecoregions2017, Natural Earth, WorldClim, GHS-POP), so their absolute values differ from the paper's. For example, on Biome I get 86.6 against the paper's 77.8. The TTE > SatCLIP L40 ordering matches on every task except EcoRegion, where the paper has SatCLIP L40 ahead.
+California Housing is the only task with exactly the paper's data. The paper's appendix reports a single 80/20 split with seed 42. With that seed I get TTE 0.536 and SatCLIP L40 0.404, against the paper's 0.532 and 0.400: the same +0.132 gap. Averaged over seeds 42–46, as `eval_range.py --n_seeds 5` does by default, I get 0.526 and 0.396. SatCLIP L10 averages 0.352, so the paper's SatCLIP row matches L40.
+
+The other six tasks use labels rebuilt from public sources (Ecoregions2017, Natural Earth, WorldClim, GHS-POP), so their absolute values differ from the paper's. For example, on Biome I get 86.6 against the paper's 77.8. The pre-registered gate asked for the same TTE vs SatCLIP ordering and a gap of similar size. The ordering matches on six of seven tasks. It fails on EcoRegion, where the paper has SatCLIP ahead (69.3 against 67.4) and these labels put TTE ahead (71.8 against 67.6).
+
+| Task | Paper: TTE − SatCLIP | Here: TTE − SatCLIP L40 (seeds 42–46) |
+|---|---|---|
+| Biome | +8.9 | +5.9 |
+| EcoRegion | −1.9 | +4.1 |
+| Country | +12.0 | +10.4 |
+| Temperature | +0.121 | +0.088 |
+| Elevation | +0.173 | +0.168 |
+| Population | +0.106 | +0.082 |
+| California Housing | +0.132 | +0.130 (+0.132 with seed 42) |
 
 ## 2. The random split measures lookup (H2)
 
@@ -80,12 +92,12 @@ The (n/m) counts are offsets with TTE ahead. The untuned MLP was run on 5 tasks 
 
 **Tuned MLP (1000 km).** I re-ran the MLP with a small grid: hidden layers (256) or (512, 512), times L2 α 10⁻⁴ or 10⁻¹. The setting was chosen by a 3-fold inner CV grouped by block, on training folds only, across all 5 offsets.
 
-| Task | TTE | SatCLIP L40 | Gap | 95% CI (offset 0) | Offsets ahead | Untuned gap, same 3 offsets |
-|---|---|---|---|---|---|---|
-| Biome | 81.0 | 79.2 | **+1.7** | [0.5, 2.8] | 5/5 | +3.4 |
-| Temperature | 0.970 | 0.966 | **+0.005** | [0.003, 0.010] | 4/5 | +0.014 |
-| Elevation | 0.854 | 0.805 | **+0.048** | [0.037, 0.101] | 5/5 | +0.053 |
-| Population | 0.621 | 0.598 | **+0.023** | [0.013, 0.042] | 5/5 | +0.030 |
+| Task | TTE | SatCLIP L40 | Gap, mean of 5 offsets | Range over offsets | Offset 0: gap [95% CI] | Offsets ahead | Untuned gap, same 3 offsets |
+|---|---|---|---|---|---|---|---|
+| Biome | 81.0 | 79.2 | **+1.7** | +1.3 to +2.4 | +1.7 [0.5, 2.8] | 5/5 | +3.4 |
+| Temperature | 0.970 | 0.966 | **+0.005** | −0.000 to +0.007 | +0.006 [0.003, 0.010] | 4/5 | +0.014 |
+| Elevation | 0.854 | 0.805 | **+0.048** | +0.032 to +0.062 | +0.062 [0.037, 0.101] | 5/5 | +0.053 |
+| Population | 0.621 | 0.598 | **+0.023** | +0.011 to +0.030 | +0.027 [0.013, 0.042] | 5/5 | +0.030 |
 
 - **Every gap shrinks with tuning, and every one stays positive.** Tuning helps SatCLIP L40 more than TTE. On the 3 offsets both runs share, tuning raised SatCLIP L40 by 1.9 points on Biome and by 0.012, 0.006 and 0.003 R² on Temperature, Elevation and Population. It raised TTE by 0.1 points and by 0.005, 0.003 and −0.001 R².
 - **Temperature is the weakest.** The fifth offset is a tie (−0.00002 R²), and the mean gap is 0.005 R² on a task where both encoders score about 0.97.
@@ -99,7 +111,7 @@ The (n/m) counts are offsets with TTE ahead. The untuned MLP was run on 5 tasks 
 
 ![TTE minus SatCLIP L40 under each readout, by block size](outputs/figures/fig3_gap_by_probe.png)
 
-*Figure 3. The same gap under each readout, as means over offsets. Under ridge it widens with block size on five of the six tasks. Under kNN it stays near zero until 1000 km blocks.*
+*Figure 3. The same gap under each readout, as means over offsets. Under ridge it widens with block size on five of the six tasks. Under kNN it is near zero at the random split and at 100 and 250 km blocks, and positive at 1000 km. kNN was not run at 500 or 2000 km.*
 
 ## 5. At long range, embedding neighbours beat geographic neighbours
 
@@ -132,7 +144,7 @@ I compared two scores for ranking per-point error without labels:
 
 There are 36 cases: 6 global tasks × 2 block sizes (500 and 1000 km) × 3 encoders. In 24 of them, D1 gives the larger risk–coverage gain with a CI above zero. 11 are inconclusive. D1 is worse in 1: TTE on EcoRegion at 500 km.
 
-By encoder, D1 wins 7/12 cases for TTE, 8/12 for SatCLIP L40 and 9/12 for SatCLIP L10. For TTE, D1 is clearly better on Temperature and Elevation (AURC gain 0.31–0.47 against 0.18–0.32) but not on Country or EcoRegion. Fig. 3 shows the curves.
+By encoder, D1 wins 7/12 cases for TTE, 8/12 for SatCLIP L40 and 9/12 for SatCLIP L10. For TTE, D1 is clearly better on Temperature and Elevation (AURC gain 0.31–0.47 against 0.18–0.32) but not on Country or EcoRegion. Figure 4 shows the curves.
 
 ![Risk-coverage curves for TTE at 1000 km blocks](outputs/figures/fig4_risk_coverage_tte.png)
 
@@ -186,7 +198,7 @@ This is descriptive. It locates where readability appears inside TTE, but it is 
 
 | | Hypothesis | Outcome |
 |---|---|---|
-| H1 | TTE's lead shrinks under blocks | **Not supported.** It grows under ridge. Under kNN/MLP it is about zero near labels and appears only at 1000 km. The exception is Housing, where the lead vanishes by 25 km. |
+| H1 | All encoders score lower as blocks grow; TTE's lead shrinks | **First half supported, second half not.** Under ridge, every encoder's score falls steadily from the random split to 2000 km blocks on all four H1 tasks (Biome, Temperature, Elevation, Population), except raw xyz on Population, which stays near zero R². TTE's lead does not shrink: under ridge it grows on Biome, Temperature and Elevation and stays flat on Population. Under kNN it is about zero at the random split and at 100 and 250 km, and positive at 1000 km (kNN was not run at 500 or 2000 km). Housing, not an H1 task, is the exception: there the lead vanishes by 25 km. |
 | H2 | Coordinate kNN is competitive on random splits and degrades fastest | **Supported for the first half.** The second half holds on the regression tasks and Biome; on Country and EcoRegion, coordinate kNN stays ahead. |
 | H3 | Class-support ceiling explains part of the block drop | **Supported.** |
 | H4 | Embedding dissimilarity ranks error better than label distance | **Partly supported** (24/36 cases, 1 reversed). |
@@ -198,8 +210,9 @@ This is descriptive. It locates where readability appears inside TTE, but it is 
 - **What was pre-registered.** `PREREGISTRATION.md` was written on 7 November, before any spatial-block result existed. That is my own statement: the file was saved minutes before the first random-split run, and no outside timestamp can show the order. It fixes H1–H5, the block design (sizes and 5 offsets), the ridge probe, the kNN-on-embeddings check, the all-offsets decision rule and the block bootstrap. Added later: the MLP probes (untuned and tuned), the wide-α ridge grid, H3 hexagons, thinned labels (E1b), the sensitivity score D2, the CI-excludes-zero requirement, and E4.
 - **Population labels were changed once.** The first build used point samples of 30″ GHS-POP counts. On the first random-split run every encoder scored R² ≈ 0.3, so I rebuilt the target as 5′ area averages (log1p) before any block result was computed. All reported Population numbers use the rebuilt target.
 - The main E3 MLP probe is a single, untuned sklearn configuration run on 5 tasks with 3 offsets. The tuned MLP (§4) picks its size and α by an inner CV grouped by block, but only at 1000 km and on 4 tasks, and SatCLIP L40 mostly chose the edge of that grid. kNN on embeddings chooses k from {3, 10, 30} by a 3-fold inner CV on the training folds; kNN on coordinates chooses from {1, 3, 10, 30}. Neither kNN inner CV is grouped by block, and no MLP's early-stopping split is. These ungrouped choices tune for interpolation, the same way for both encoders.
-- **Leakage checks.** Test labels never enter a probe: `fit_predict` takes no test labels. Scalers, target standardization and hyperparameter search are fit on training folds only. On all 245 block splits, no block appears in both training and test, every point is predicted exactly once, and at the finest block size no exact coordinate is shared across a fold.
-- Blocks hold out labels, not the encoders' pretraining data. Both encoders were pretrained on global imagery, so 'held-out region' means no downstream labels there, not that the encoder never saw the region.
+- **Leakage checks.** Test labels never enter a probe: `fit_predict` takes no test labels. Scalers, target standardization and hyperparameter search are fit on training folds only. On all 175 block splits (7 tasks × 5 sizes × 5 offsets, 875 folds), no block appears in both training and test, every point is predicted exactly once, and at the finest block size no exact coordinate is shared across a fold.
+- **Blocks hold out labels, not pretraining data.** Both encoders were pretrained contrastively on global Sentinel-2 imagery, so a held-out block is a region with no downstream labels, not a region the encoder has never seen.
+- **Block sides are in projected km.** The grid is equal-area, so every block has the same area, but away from the equator blocks narrow east–west and stretch north–south: at 60° latitude a 1000 km block is about 500 km wide and 2000 km tall on the ground. H3 hexagons, which are close to regular on the ground, give the same conclusions (§3).
 - Block-bootstrap CIs come from grid offset 0. Sign counts cover all offsets. The E2 CIs use 500 resamples, not the pre-registered 1,000; the score-gap CIs use 1,000.
 - Housing results at blocks of 100 km and above rest on few blocks with R² near or below zero, so I treat them as uninformative.
 
@@ -209,3 +222,4 @@ This is descriptive. It locates where readability appears inside TTE, but it is 
 - **Tuned MLP everywhere.** It was run only at 1000 km and on Biome, Temperature, Elevation and Population, with a 4-point grid whose largest network SatCLIP L40 mostly chose.
 - **Grouped inner CV for kNN.** k is chosen by an ungrouped inner CV.
 - **Other location encoders.** Only TTE, SatCLIP (L10, L40), a fixed spherical-harmonic basis and raw coordinates were compared.
+- **The kNN distance.** kNN on embeddings uses Euclidean distance after min–max scaling, with TTE's embeddings L2-normalized and SatCLIP's raw, as in the ridge protocol. Cosine distance or unscaled embeddings were not tried.

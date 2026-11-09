@@ -13,7 +13,7 @@ Rohan Bali · ongoing work, November 2026
 
 ## Key results
 
-1. **Under TTE's own linear probe, TTE's lead over SatCLIP ViT16-L40 grows when regions are held out.** On Country it rises from +10.4 points on a random split to +27.0 at 1000 km blocks. This is the opposite of what the pre-registered hypothesis H1 predicted.
+1. **Under TTE's own linear probe, TTE's lead over SatCLIP ViT16-L40 grows when regions are held out.** The pre-registered hypothesis H1 predicted the opposite. Of the four tasks it named, the lead grows on three: on Elevation from +0.168 R² on a random split to +0.217 at 1000 km blocks, and on Biome from +5.9 to +10.0 points. On Population it stays flat (+0.082 to +0.080).
 2. **Most of that lead comes from the readout.** Read out by kNN instead, the two encoders tie on random splits. At 1000 km TTE keeps a smaller lead that is consistent across grid offsets. "TTE beats SatCLIP L40 under 1000 km blocks" meets the pre-registered rule on 5 of 7 tasks.
 3. **The random split mostly measures lookup.** kNN on raw latitude and longitude beats every encoder read out by the linear probe, on every task. On Elevation, for example, it scores R² 0.946 against TTE's 0.872.
 
@@ -32,7 +32,7 @@ Rohan Bali · ongoing work, November 2026
 
 ![TTE minus SatCLIP L40 by block size, under each readout](outputs/figures/fig3_gap_by_probe.png)
 
-<sub>The same gap as a function of block size. Under ridge (blue) it widens with block size on five of the six tasks. Under kNN (orange) it stays near zero until 1000 km blocks.</sub>
+<sub>The same gap as a function of block size. Under ridge (blue) it widens with block size on five of the six tasks. Under kNN (orange) it is near zero at the random split and at 100 and 250 km blocks, and positive at 1000 km; kNN was not run at 500 or 2000 km.</sub>
 
 Full write-up, hypothesis scorecard and caveats: **[FINDINGS.md](FINDINGS.md)**. Every table, with 95% block-bootstrap CIs: **[outputs/RESULTS_TABLES.md](outputs/RESULTS_TABLES.md)**.
 
@@ -64,11 +64,13 @@ Everything else was added afterwards and is labelled as such. Hypotheses that fa
 **Held fixed, exactly as in `external/TTE/eval/eval_range.py`:**
 - TTE embeddings are L2-normalized (the script's default); SatCLIP embeddings are used raw, as in RANGE.
 - The probe is `MinMaxScaler`, then `RidgeClassifierCV(alphas=(0.1, 1, 10), cv=10)` or `RidgeCV(alphas=(0.1, 1, 10), cv=3)`.
-- The random split is 80/20 with seeds 42–46, and the mean is reported (the Table 1 protocol).
+- The random split is 80/20 with seeds 42–46, averaged, as `eval_range.py --n_seeds 5` does by default. The paper's appendix reports a single split with seed 42; per-seed scores are in `outputs/results_e0_*.csv`.
 
 **Changed:**
 - **Spatial blocks.** 5-fold `GroupKFold` over square blocks on a Lambert cylindrical equal-area grid. Block sides are 100 / 250 / 500 / 1000 / 2000 km for the global tasks and 10 / 25 / 50 / 100 / 200 km for California, each with 5 random grid offsets.
 - **One distance axis.** Every protocol is also placed on the median great-circle distance from a test point to its nearest training label.
+- **What a block holds out.** Downstream labels, not pretraining data. Both encoders were pretrained on global Sentinel-2 imagery, so a held-out block is a region with no labels, not one the encoder has never seen.
+- **Block geometry.** Sides are in projected km on an equal-area grid. Every block has the same area, but away from the equator blocks narrow east–west and stretch north–south: at 60° latitude a 1000 km block is about 500 × 2000 km on the ground. H3 hexagons, close to regular on the ground, give the same conclusions (E3c).
 - **Readouts.** kNN and MLP probes run on the same embeddings and folds as ridge. Scalers, target standardization and hyperparameter search are fit on training folds only.
 - **Uncertainty.** 95% CIs come from a bootstrap over test blocks, never from point-level intervals. The score gaps use 1,000 resamples, as pre-registered, and the E2 trust scores use 500.
 
@@ -82,7 +84,7 @@ Everything else was added afterwards and is labelled as such. Hypotheses that fa
 
 ## Data and deviations from the paper
 
-The RANGE evaluation CSVs are not public, so labels are rebuilt from public sources (`src/build_data.py`). The six global tasks are drawn from one sample of 50,000 points, uniform on land (latitude > −60°). Each task keeps the points that have a label, which leaves 48,990 to 50,000 per task. Absolute numbers therefore differ from the paper's Table 1. The reproduction gate (E0) required the same ordering and gaps of similar size. California Housing, the one task with identical data, reproduces to within 0.006 R²: TTE 0.526 and SatCLIP L40 0.396, against the paper's 0.532 and 0.400.
+The RANGE evaluation CSVs are not public, so labels are rebuilt from public sources (`src/build_data.py`). The six global tasks are drawn from one sample of 50,000 points, uniform on land (latitude > −60°). Each task keeps the points that have a label, which leaves 48,990 to 50,000 per task. Absolute numbers therefore differ from the paper's Table 1. The reproduction gate (E0) required the same ordering and gaps of similar size. The ordering matches on six of seven tasks. On EcoRegion the paper has SatCLIP ahead (69.3 against 67.4), while these labels put TTE ahead (71.8 against 67.6). California Housing, the one task with identical data, reproduces closely. With the paper's single seed (42), TTE scores 0.536 and SatCLIP L40 0.404, against the paper's 0.532 and 0.400: the same +0.132 gap. Averaged over seeds 42–46, the scores are 0.526 and 0.396.
 
 | Task | Source here | RANGE's source |
 |---|---|---|

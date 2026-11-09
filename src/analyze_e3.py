@@ -72,12 +72,14 @@ def e3_sections(e0, e1, h):
     # ---------------- probe comparison
     md.append("## E3a/b/d: does the TTE lead survive a change of probe?\n")
     md.append(
-        "Same embeddings, same folds. TTE, SatCLIP L40 and gap (TTE minus SatCLIP L40) are means over all grid offsets "
-        "(blocks) or seeds (random); 'ahead' counts the offsets or seeds where TTE scores higher. The CI is the 95% block "
-        "bootstrap on offset 0 alone (seed 42 for random, by point), so it need not contain the mean gap. kNN on raw "
-        "coordinates is the lookup baseline.\n"
+        "Same embeddings, same folds. TTE, SatCLIP L40 and the mean gap (TTE minus SatCLIP L40) are means over all grid "
+        "offsets (blocks) or seeds (random); 'ahead' counts the offsets or seeds where TTE scores higher. The last gap "
+        "column is offset 0 alone (seed 42 for random), next to its own 95% block-bootstrap CI (by point for random). "
+        "kNN on raw coordinates is the lookup baseline.\n"
     )
-    md.append("| task | split | probe | TTE | SatCLIP L40 | gap | 95% CI | ahead | kNN on coords |")
+    md.append(
+        "| task | split | probe | TTE | SatCLIP L40 | gap, mean | ahead | gap, offset 0 [95% CI] | kNN on coords |"
+    )
     md.append("|---|---|---|---|---|---|---|---|---|")
     verdict = []
     for k in h.ORDER:
@@ -89,11 +91,11 @@ def e3_sections(e0, e1, h):
                 if not na or not nb:
                     continue
                 ci = _ci(h, k, df.probe.iloc[0], s)
-                cis = f"[{h.fmt(k, ci[1])}, {h.fmt(k, ci[2])}]" if ci else ""
+                cis = f"{h.fmt(k, ci[0])} [{h.fmt(k, ci[1])}, {h.fmt(k, ci[2])}]" if ci else ""
                 c, _ = _cell(h, k, coords, "coords", s)
                 md.append(
                     f"| {h.LABEL[k]} | {s if s == 'random' else s + ' km'} | {pname} | {h.fmt(k, a)} | {h.fmt(k, b)} | "
-                    f"{h.fmt(k, a - b)} | {cis} | {_ahead(df, k, s)} | {h.fmt(k, c) if not np.isnan(c) else ''} |"
+                    f"{h.fmt(k, a - b)} | {_ahead(df, k, s)} | {cis} | {h.fmt(k, c) if not np.isnan(c) else ''} |"
                 )
                 big = str(BIG.get(k, 1000))
                 if s == big:
@@ -113,8 +115,9 @@ def e3_sections(e0, e1, h):
     v = pd.DataFrame(verdict)
     md.append("## Pre-registered rule: does 'TTE beats SatCLIP L40 under large blocks' hold under every probe?\n")
     md.append(
-        "Rule (PREREGISTRATION.md): the sign must hold on every grid offset, under the ridge probe and the kNN probe, "
-        "with the block-bootstrap CI excluding zero. Checked at 1000 km (global tasks) and 100 km (housing).\n"
+        "Rule (PREREGISTRATION.md): the sign must hold on every grid offset, under the ridge probe and the kNN probe. "
+        "Added after the pre-registration: the offset-0 block-bootstrap CI must also exclude zero. Checked at 1000 km "
+        "(global tasks) and 100 km (housing).\n"
     )
     md.append("| task | " + " | ".join(v.probe.unique()) + " | rule met? |")
     md.append("|---|" + "---|" * (v.probe.nunique() + 1))
