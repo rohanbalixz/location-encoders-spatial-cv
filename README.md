@@ -181,4 +181,4 @@ This repo only extends their evaluation. The models and their results belong to 
 
 ## License
 
-MIT for the code in this repo; see [LICENSE](LICENSE).
+MIT for the code in this repo; see [LICENSE](LICENSE). The vendored SatCLIP location encoder keeps its own MIT license (Microsoft Corporation): [src/vendor/satclip_le/LICENSE](src/vendor/satclip_le/LICENSE).
