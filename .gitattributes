@@ -1,0 +1,4 @@
+# Third-party code and generated files: excluded from GitHub's language statistics and collapsed in diffs.
+src/vendor/** linguist-vendored
+outputs/RESULTS_TABLES.md linguist-generated
+outputs/*.csv linguist-generated

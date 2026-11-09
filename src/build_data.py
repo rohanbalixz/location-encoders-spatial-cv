@@ -10,7 +10,7 @@ The RANGE eval CSVs are not public, so labels are rebuilt from:
   California housing: sklearn fetch_california_housing (same 1990 census data as RANGE)
 Global tasks share one set of points sampled uniformly on land (lat > -60).
 """
-import sys
+
 from pathlib import Path
 
 import geopandas as gpd
@@ -44,7 +44,7 @@ def sample_land_points():
 
 
 def join_polygons(df, shp, cols):
-    poly = gpd.read_file(shp)[cols + ["geometry"]]
+    poly = gpd.read_file(shp)[[*cols, "geometry"]]
     g = gpd.GeoDataFrame(df.copy(), geometry=gpd.points_from_xy(df.lon, df.lat), crs="EPSG:4326")
     poly = poly.to_crs("EPSG:4326")
     hit = gpd.sjoin(g, poly, how="left", predicate="within")
@@ -67,9 +67,11 @@ def sample_raster_avg(df, tif, factor):
     """Area-average the raster by `factor` (30'' -> 5' for GHS-POP), then sample.
     Point samples of 30'' population counts are too noisy (R^2 ~0.3 for every encoder)."""
     from rasterio.enums import Resampling
+
     with rasterio.open(tif) as src:
-        arr = src.read(1, out_shape=(src.height // factor, src.width // factor),
-                       resampling=Resampling.average).astype(np.float64)
+        arr = src.read(1, out_shape=(src.height // factor, src.width // factor), resampling=Resampling.average).astype(
+            np.float64
+        )
         tr = src.transform * src.transform.scale(src.width / arr.shape[1], src.height / arr.shape[0])
     arr[arr < 0] = np.nan
     r, c = rasterio.transform.rowcol(tr, df.lon.values, df.lat.values)
@@ -96,7 +98,10 @@ def main():
             d = d[d["y"] != "N/A"]
             d["y"] = d["y"].astype(str)
         d.to_parquet(OUT / f"{name}.parquet")
-        print(f"{name:12s} n={len(d):6d}", (f"classes={d.y.nunique()}" if not num else f"mean={d.y.mean():.2f} sd={d.y.std():.2f}"))
+        print(
+            f"{name:12s} n={len(d):6d}",
+            (f"classes={d.y.nunique()}" if not num else f"mean={d.y.mean():.2f} sd={d.y.std():.2f}"),
+        )
 
     save("biome", eco["BIOME_NAME"].values)
     save("ecoregion", eco["ECO_NAME"].values)
@@ -106,6 +111,7 @@ def main():
     save("population", np.log1p(pop))
 
     from sklearn.datasets import fetch_california_housing
+
     ch = fetch_california_housing(data_home=str(RAW / "sklearn"), as_frame=True).frame
     d = pd.DataFrame({"lon": ch.Longitude.values, "lat": ch.Latitude.values, "y": ch.MedHouseVal.values})
     d.to_parquet(OUT / "housing.parquet")

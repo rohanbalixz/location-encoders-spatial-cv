@@ -1,5 +1,6 @@
 # Spatial-block evaluation of frozen location encoders
 
+[![tests](https://github.com/rohanbalixz/location-encoders-spatial-cv/actions/workflows/tests.yml/badge.svg)](https://github.com/rohanbalixz/location-encoders-spatial-cv/actions/workflows/tests.yml)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-3776ab)](requirements.txt)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2ea44f)](LICENSE)
 [![Hypotheses pre-registered](https://img.shields.io/badge/hypotheses-pre--registered-6f42c1)](PREREGISTRATION.md)
@@ -29,7 +30,7 @@ Rohan Bali · ongoing work, November 2026
 
 <sub>Means over 5 seeds (random) or 5 grid offsets (blocks). Ridge is TTE's `eval_range.py` probe. Every 1000 km gap is positive on all 5 offsets, except Population under kNN (3/5) and Temperature under the tuned MLP (4/5, the fifth a tie). The tuned MLP chooses its size and L2 penalty by an inner CV grouped by block; — means not run. California Housing covers one state and is tested only up to 100 km blocks; see FINDINGS.md.</sub>
 
-![TTE minus SatCLIP L40 by block size, under each readout](outputs/figures/fig4_gap_by_probe.png)
+![TTE minus SatCLIP L40 by block size, under each readout](outputs/figures/fig3_gap_by_probe.png)
 
 <sub>The same gap as a function of block size. Under ridge (blue) it widens with block size on five of the six tasks. Under kNN (orange) it stays near zero until 1000 km blocks.</sub>
 
@@ -77,11 +78,11 @@ Everything else was added afterwards and is labelled as such. Hypotheses that fa
 - Raw xyz.
 - kNN on raw coordinates (haversine, k chosen by inner CV). This shows how much of a benchmark is lookup.
 
-`src/check_leakage.py` verifies the exact splits. No block appears in both the training and test side of a fold, every point is tested exactly once, and at the finest block size no exact coordinate is shared across a fold.
+**Leakage checks.** `src/check_leakage.py` verifies the exact splits used for the results. No block appears on both the training and test side of a fold, every point is tested exactly once, and at the finest block size no exact coordinate is shared across a fold. The unit tests in `tests/` check the same properties on synthetic data, and also that every probe is fit on training data only: no test point's prediction depends on the other test points. A scaler fit on training plus test data, or folds that ignore the blocks, makes them fail.
 
 ## Data and deviations from the paper
 
-The RANGE evaluation CSVs are not public, so labels are rebuilt from public sources (`src/build_data.py`). The six global tasks share 50,000 points sampled uniformly on land (latitude > −60°). Absolute numbers therefore differ from the paper's Table 1. The reproduction gate (E0) required the same ordering and gaps of similar size. California Housing, the one task with identical data, reproduces to within 0.006 R²: TTE 0.526 and SatCLIP L40 0.396, against the paper's 0.532 and 0.400.
+The RANGE evaluation CSVs are not public, so labels are rebuilt from public sources (`src/build_data.py`). The six global tasks are drawn from one sample of 50,000 points, uniform on land (latitude > −60°). Each task keeps the points that have a label, which leaves 48,990 to 50,000 per task. Absolute numbers therefore differ from the paper's Table 1. The reproduction gate (E0) required the same ordering and gaps of similar size. California Housing, the one task with identical data, reproduces to within 0.006 R²: TTE 0.526 and SatCLIP L40 0.396, against the paper's 0.532 and 0.400.
 
 | Task | Source here | RANGE's source |
 |---|---|---|
@@ -128,12 +129,24 @@ N_JOBS=8 ./scripts/reproduce.sh
 - **Runtime.** The full run takes about 6.5 hours with 10 workers. Most of that is the kNN probe (1.7 h) and the tuned MLP (3.3 h).
 - **What is committed.** The scores behind every table are in `outputs/results_*.csv`.
 - **What the runs regenerate.** The CIs and E2 also need the per-point predictions in `outputs/points/` (318 MB, not committed).
+- **Column definitions.** [`outputs/README.md`](outputs/README.md) describes every results file and column.
+
+### Tests
+
+The unit tests need no data and run in about 5 seconds:
+
+```bash
+pip install -r requirements-test.txt
+ruff check . && pytest
+```
+
+They run on every push through GitHub Actions.
 
 ## Repository layout
 
 ```
 ├── PREREGISTRATION.md      hypotheses and decision rules, written before any block result
-├── FINDINGS.md             results, hypothesis scorecard, caveats
+├── FINDINGS.md             results, figures, hypothesis scorecard, caveats
 ├── scripts/reproduce.sh    every run, in order
 ├── src/
 │   ├── build_data.py       rebuild the seven tasks from public sources
@@ -142,12 +155,17 @@ N_JOBS=8 ./scripts/reproduce.sh
 │   ├── diagnostics.py      E2: label-free trust scores and site density
 │   ├── tte_layers.py       E4: intermediate TTE stages
 │   ├── check_leakage.py    checks on the exact splits and saved predictions
-│   ├── analyze.py, analyze_e3.py, figures_extra.py
+│   ├── analyze.py, analyze_e3.py, figures_extra.py   tables and figures
 │   └── vendor/satclip_le/  SatCLIP location encoder (MIT, Microsoft)
-└── outputs/
-    ├── RESULTS_TABLES.md   every table, with block-bootstrap CIs
-    ├── results_*.csv       one row per task × encoder × split × probe
-    └── figures/
+├── tests/                  split and probe properties on synthetic data
+├── outputs/
+│   ├── README.md           what every results file and column means
+│   ├── RESULTS_TABLES.md   every table, with block-bootstrap CIs
+│   ├── results_*.csv       one row per task × encoder × probe × split
+│   └── figures/
+├── requirements.txt        pinned versions used for the results
+├── requirements-test.txt   minimal environment for the tests
+└── pyproject.toml          lint and test configuration
 ```
 
 ## Citation

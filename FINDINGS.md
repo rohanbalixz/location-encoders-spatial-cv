@@ -31,6 +31,10 @@ Read out by kNN instead, TTE and SatCLIP L40 embeddings match coordinate kNN to 
 
 Under blocks, coordinate kNN degrades fastest on the regression tasks and on Biome, and TTE overtakes it at about 250–500 km. On Country and EcoRegion, coordinate kNN stays ahead of TTE even at 2000 km.
 
+![Score against distance to the nearest training label](outputs/figures/fig1_score_vs_label_distance.png)
+
+*Figure 1. Score against the median distance from a test point to its nearest training label, under the ridge probe. Solid lines: the random split (leftmost point), then spatial blocks of increasing size. Dashed lines: the random split with training labels thinned to 30 / 10 / 3 / 1%, which reaches similar distances without holding out any region.*
+
 ## 3. Under blocks, the linear-probe lead grows, not shrinks (H1 not supported)
 
 Gaps below are TTE minus SatCLIP L40 under the paper's ridge probe. Each is the mean over 5 grid offsets, and TTE is ahead on 5/5 offsets in every cell shown.
@@ -49,6 +53,10 @@ The result survives three robustness checks. The grid offsets were pre-registere
 - Square blocks replaced by H3 hexagons.
 - A wide ridge grid (α from 10⁻⁴ to 10⁴, chosen by grouped inner CV). The gaps change by at most 0.7 points or 0.007 R².
 - All 5 grid offsets.
+
+![TTE minus SatCLIP L40 under the ridge probe, by block size](outputs/figures/fig2_gap_tte_minus_satclip.png)
+
+*Figure 2. TTE minus SatCLIP L40 under the ridge probe, by block side, for grid offset 0 with 95% block-bootstrap CIs. The tables report means over all 5 offsets, so their values differ slightly.*
 
 **Exception: California Housing.** The lead is gone by 25 km blocks, and at 100 km both encoders score near or below zero R².
 
@@ -89,6 +97,10 @@ The (n/m) counts are offsets with TTE ahead. The untuned MLP was run on 5 tasks 
 - **The rule is not met on Population or Housing.** On Population, kNN is ahead on only 3/5 offsets, even though ridge and the tuned MLP (+0.023 R², 5/5) favour TTE. On Housing, which covers one state and so is tested at up to 100 km blocks, TTE is behind on most offsets.
 - **Why the ridge gap is large.** SatCLIP L40 loses 9–26 points of accuracy (0.06–0.25 R²) when a linear head replaces kNN. TTE loses 0.7–14 points (at most 0.08 R²). Most of the ridge gap therefore reflects how well a global linear map can read each embedding, not a difference in what the embeddings contain. This is also why the distance-vs-region decomposition (`outputs/RESULTS_TABLES.md`) assigns SatCLIP L40 a region effect 3–4× larger than TTE's under ridge: it measures a linear readout extrapolating into held-out regions.
 
+![TTE minus SatCLIP L40 under each readout, by block size](outputs/figures/fig3_gap_by_probe.png)
+
+*Figure 3. The same gap under each readout, as means over offsets. Under ridge it widens with block size on five of the six tasks. Under kNN it stays near zero until 1000 km blocks.*
+
 ## 5. At long range, embedding neighbours beat geographic neighbours
 
 At 1000 km blocks, kNN in embedding space beats kNN on coordinates for both encoders:
@@ -121,6 +133,10 @@ I compared two scores for ranking per-point error without labels:
 There are 36 cases: 6 global tasks × 2 block sizes (500 and 1000 km) × 3 encoders. In 24 of them, D1 gives the larger risk–coverage gain with a CI above zero. 11 are inconclusive. D1 is worse in 1: TTE on EcoRegion at 500 km.
 
 By encoder, D1 wins 7/12 cases for TTE, 8/12 for SatCLIP L40 and 9/12 for SatCLIP L10. For TTE, D1 is clearly better on Temperature and Elevation (AURC gain 0.31–0.47 against 0.18–0.32) but not on Country or EcoRegion. Fig. 3 shows the curves.
+
+![Risk-coverage curves for TTE at 1000 km blocks](outputs/figures/fig4_risk_coverage_tte.png)
+
+*Figure 4. Risk–coverage for TTE at 1000 km blocks. Each curve sets aside the test points a label-free score trusts least, and plots the error on the points kept. Lower is better. The dotted line is the oracle, which sorts by the true error.*
 
 ## 8. Learned-site density (H5 not supported)
 

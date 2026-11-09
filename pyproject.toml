@@ -1,0 +1,27 @@
+# Tool configuration only: the code in src/ is a set of scripts, not an installable package.
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = ["src/vendor", "external", "data", "tools", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "C4", "UP", "RUF"]
+ignore = [
+    "E501",                        # line length is left to `ruff format`; long strings stay readable
+    "B905",                        # zip() over plot grids deliberately pairs unequal lengths
+    "RUF001", "RUF002", "RUF003",  # typographic characters (×, −, ′) in strings and comments
+    "RUF046",                      # int(round(x)) kept as written in the split code
+]
+
+[tool.ruff.lint.per-file-ignores]
+"src/*.py" = ["E402"]    # scripts set thread limits / sys.path before importing
+"tests/*.py" = ["E402"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["spatial_cv", "encoders", "analyze", "analyze_e3", "diagnostics", "tte_layers"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::sklearn.exceptions.ConvergenceWarning"]  # tiny toy MLPs in the tests

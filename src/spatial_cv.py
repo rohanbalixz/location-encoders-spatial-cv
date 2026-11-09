@@ -1,9 +1,12 @@
-"""E0/E1/E3: random-split vs spatial-block evaluation of frozen location encoders.
+"""E0/E1/E3/E4: random-split vs spatial-block evaluation of frozen location encoders.
 
-Probe protocol mirrors external/TTE/eval/eval_range.py exactly (MinMaxScaler +
+The ridge probe mirrors external/TTE/eval/eval_range.py exactly (MinMaxScaler +
 RidgeClassifierCV(alphas=(0.1,1,10), cv=10) / RidgeCV(alphas=(0.1,1,10), cv=3)).
-Only the split changes.
+E3 reads the same embeddings out with kNN and MLP probes on the same folds.
+
+    python src/spatial_cv.py --exp e1_block --splits block --knn_coords
 """
+
 import os
 
 for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
@@ -33,8 +36,15 @@ EMB = ROOT / "data/emb"
 OUT = ROOT / "outputs"
 R_EARTH = 6371.0088
 
-TASKS = {"biome": "cls", "ecoregion": "cls", "country": "cls",
-         "temperature": "reg", "elevation": "reg", "population": "reg", "housing": "reg"}
+TASKS = {
+    "biome": "cls",
+    "ecoregion": "cls",
+    "country": "cls",
+    "temperature": "reg",
+    "elevation": "reg",
+    "population": "reg",
+    "housing": "reg",
+}
 BLOCK_KM = {"global": [100, 250, 500, 1000, 2000], "housing": [10, 25, 50, 100, 200]}
 H3_RES = {"global": [2, 1, 0], "housing": [5, 4, 3]}
 RIDGE_ALPHAS = (0.1, 1.0, 10.0)
@@ -59,6 +69,7 @@ def get_embeddings(task, enc_name):
     f = EMB / f"{enc_name}__{task}.npy"
     if not f.exists():
         from encoders import get_encoder
+
         lonlat, _ = load_task(task)
         np.save(f, get_encoder(enc_name)(lonlat))
     return np.load(f)
@@ -82,6 +93,7 @@ def block_ids(lonlat, size_km, offset_seed):
 
 def h3_ids(lonlat, res):
     import h3
+
     cells = [h3.latlng_to_cell(la, lo, res) for lo, la in lonlat]
     return pd.factorize(np.array(cells))[0]
 
@@ -115,14 +127,17 @@ def make_split(lonlat, split):
 # ----------------------------------------------------------------------------- probes
 def fit_predict(Xtr, ytr, Xte, kind, probe, groups_tr=None):
     if probe == "knn_coords":  # Xtr/Xte are lonlat in degrees
-        A = np.radians(Xtr[:, ::-1]); B = np.radians(Xte[:, ::-1])
+        A = np.radians(Xtr[:, ::-1])
+        B = np.radians(Xte[:, ::-1])
         est = (KNeighborsClassifier if kind == "cls" else KNeighborsRegressor)(
-            metric="haversine", algorithm="ball_tree", weights="distance")
+            metric="haversine", algorithm="ball_tree", weights="distance"
+        )
         gs = GridSearchCV(est, {"n_neighbors": [1, 3, 10, 30]}, cv=3)
         gs.fit(A, ytr)
         return gs.predict(B), {"k": gs.best_params_["n_neighbors"]}
     sc = MinMaxScaler().fit(Xtr)
-    Xtr = sc.transform(Xtr); Xte = sc.transform(Xte)
+    Xtr = sc.transform(Xtr)
+    Xte = sc.transform(Xte)
     if probe == "ridge":
         m = RidgeClassifierCV(alphas=RIDGE_ALPHAS, cv=10) if kind == "cls" else RidgeCV(alphas=RIDGE_ALPHAS, cv=3)
         m.fit(Xtr, ytr)
@@ -161,16 +176,22 @@ def fit_predict(Xtr, ytr, Xte, kind, probe, groups_tr=None):
             mu, sd = ytr.mean(), ytr.std()
             yt = (ytr - mu) / sd
         grid = {"hidden_layer_sizes": [(256,), (512, 512)], "alpha": [1e-4, 1e-1]}
-        inner = (list(GroupKFold(n_splits=3, shuffle=True, random_state=0).split(Xtr, groups=groups_tr))
-                 if groups_tr is not None else 3)
+        inner = (
+            list(GroupKFold(n_splits=3, shuffle=True, random_state=0).split(Xtr, groups=groups_tr))
+            if groups_tr is not None
+            else 3
+        )
         gs = GridSearchCV(M(early_stopping=True, max_iter=200, random_state=0), grid, cv=inner)
         gs.fit(Xtr, yt)
         p = gs.predict(Xte)
         if kind == "reg":
             p = p * sd + mu
         bp = gs.best_params_
-        return p, {"hidden": list(bp["hidden_layer_sizes"]), "alpha": bp["alpha"],
-                   "inner_scores": [round(float(v), 4) for v in gs.cv_results_["mean_test_score"]]}
+        return p, {
+            "hidden": list(bp["hidden_layer_sizes"]),
+            "alpha": bp["alpha"],
+            "inner_scores": [round(float(v), 4) for v in gs.cv_results_["mean_test_score"]],
+        }
     raise ValueError(probe)
 
 
@@ -206,21 +227,40 @@ def run_job(task, enc, probe, split, save_points=False):
     m = fold_id >= 0
     if kind == "cls":
         score = float(np.mean(pred[m] == y[m]))
-        extra = {"ceiling": float(supported[m].mean()),
-                 "acc_supported": float(np.mean(pred[m & supported] == y[m & supported]))}
+        extra = {
+            "ceiling": float(supported[m].mean()),
+            "acc_supported": float(np.mean(pred[m & supported] == y[m & supported])),
+        }
     else:
         score = float(r2_score(y[m], pred[m]))
         extra = {}
-    row = {"task": task, "encoder": enc, "probe": probe, **{f"split_{k}": v for k, v in split.items()},
-           "score": score, "median_nn_km": float(np.median(nnd[m])), "n_test": int(m.sum()),
-           "n_folds": len(folds), "n_groups": int(len(np.unique(groups))) if groups is not None else 0,
-           "probe_info": json.dumps(infos), "secs": round(time.time() - t0, 1), **extra}
+    row = {
+        "task": task,
+        "encoder": enc,
+        "probe": probe,
+        **{f"split_{k}": v for k, v in split.items()},
+        "score": score,
+        "median_nn_km": float(np.median(nnd[m])),
+        "n_test": int(m.sum()),
+        "n_folds": len(folds),
+        "n_groups": int(len(np.unique(groups))) if groups is not None else 0,
+        "probe_info": json.dumps(infos),
+        "secs": round(time.time() - t0, 1),
+        **extra,
+    }
     if save_points:
-        pdir = OUT / "points"; pdir.mkdir(parents=True, exist_ok=True)
+        pdir = OUT / "points"
+        pdir.mkdir(parents=True, exist_ok=True)
         tag = "_".join(f"{k}{v}" for k, v in split.items())
-        np.savez_compressed(pdir / f"{task}__{enc}__{probe}__{tag}.npz", y=y, pred=pred, fold=fold_id,
-                            nn_km=nnd, supported=supported,
-                            groups=groups if groups is not None else np.zeros(n, dtype=np.int64))
+        np.savez_compressed(
+            pdir / f"{task}__{enc}__{probe}__{tag}.npz",
+            y=y,
+            pred=pred,
+            fold=fold_id,
+            nn_km=nnd,
+            supported=supported,
+            groups=groups if groups is not None else np.zeros(n, dtype=np.int64),
+        )
     return row
 
 
@@ -266,7 +306,11 @@ def main():
             pairs.append(("coords", "knn_coords"))
         for e, pr in pairs:
             for s in sp:
-                save = (s["kind"] == "random" and s["seed"] == 42) or (s["kind"] == "block" and s["offset"] == 0) or s["kind"] == "h3"
+                save = (
+                    (s["kind"] == "random" and s["seed"] == 42)
+                    or (s["kind"] == "block" and s["offset"] == 0)
+                    or s["kind"] == "h3"
+                )
                 jobs.append((t, e, pr, s, save))
     print(f"{len(jobs)} jobs", flush=True)
     t0 = time.time()
@@ -278,11 +322,14 @@ def main():
     for r in Parallel(n_jobs=a.n_jobs, verbose=5, return_as="generator_unordered")(delayed(run_job)(*j) for j in jobs):
         rows.append(r)
         pd.DataFrame(rows).to_csv(partial, index=False)
-        print(f"[{time.strftime('%H:%M:%S')}] finished {len(rows)}/{len(jobs)}: {r['task']} {r['encoder']} "
-              f"{r.get('split_size_km', r.get('split_seed', ''))} offset {r.get('split_offset', '')} score {r['score']:.4f}", flush=True)
+        print(
+            f"[{time.strftime('%H:%M:%S')}] finished {len(rows)}/{len(jobs)}: {r['task']} {r['encoder']} "
+            f"{r.get('split_size_km', r.get('split_seed', ''))} offset {r.get('split_offset', '')} score {r['score']:.4f}",
+            flush=True,
+        )
     pd.DataFrame(rows).to_csv(out, index=False)
     partial.unlink(missing_ok=True)
-    print(f"done in {time.time()-t0:.0f}s -> outputs/results_{a.exp}.csv")
+    print(f"done in {time.time() - t0:.0f}s -> outputs/results_{a.exp}.csv")
 
 
 if __name__ == "__main__":

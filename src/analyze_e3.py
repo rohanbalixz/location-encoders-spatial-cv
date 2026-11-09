@@ -1,7 +1,8 @@
 """E3 robustness (probe choice, alpha grid, block shape) and E2 (label-free trust scores, site density) sections
-for RESULTS_TABLES.md, plus fig4 (TTE minus SatCLIP L40 gap under each probe).
+for RESULTS_TABLES.md, plus fig3 (TTE minus SatCLIP L40 gap under each probe).
 
 Helpers (fmt, boot_gap, LABEL, ...) come from analyze.py, passed in as `h` to avoid a circular import."""
+
 import json
 
 import numpy as np
@@ -13,8 +14,12 @@ BIG = {"housing": 100}  # largest block size shared by all probes; 1000 km for t
 
 def _read(h, name):
     if name == "e3_mlp_tuned":  # run in two stages (biome, then regression); include rows of a stage still running
-        fs = [f for stage in ("biome", "reg") for f in (h.OUT / f"results_{name}_{stage}.csv", h.OUT / f"results_{name}_{stage}.partial.csv")
-              if f.exists()]
+        fs = [
+            f
+            for stage in ("biome", "reg")
+            for f in (h.OUT / f"results_{name}_{stage}.csv", h.OUT / f"results_{name}_{stage}.partial.csv")
+            if f.exists()
+        ]
         return pd.concat([pd.read_csv(f) for f in fs]) if fs else None
     f = h.OUT / f"results_{name}.csv"
     return pd.read_csv(f) if f.exists() else None
@@ -53,7 +58,12 @@ def e3_sections(e0, e1, h):
     e1 = e1.assign(setting=e1.split_size_km.astype(int).astype(str))
     ridge = pd.concat([e0, e1])
     probes = {"ridge (paper protocol)": ridge[ridge.probe == "ridge"]}
-    for name, label in [("e3_ridgewide", "ridge, wide α, spatial inner CV"), ("e3_knnemb", "kNN on embeddings"), ("e3_mlp", "MLP, untuned defaults"), ("e3_mlp_tuned", "MLP, tuned (grouped inner CV)")]:
+    for name, label in [
+        ("e3_ridgewide", "ridge, wide α, spatial inner CV"),
+        ("e3_knnemb", "kNN on embeddings"),
+        ("e3_mlp", "MLP, untuned defaults"),
+        ("e3_mlp_tuned", "MLP, tuned (grouped inner CV)"),
+    ]:
         d = _read(h, name)
         if d is not None:
             probes[label] = d.assign(setting=_setting(d))
@@ -61,10 +71,12 @@ def e3_sections(e0, e1, h):
 
     # ---------------- probe comparison
     md.append("## E3a/b/d: does the TTE lead survive a change of probe?\n")
-    md.append("Same embeddings, same folds. TTE, SatCLIP L40 and gap (TTE minus SatCLIP L40) are means over all grid offsets "
-              "(blocks) or seeds (random); 'ahead' counts the offsets or seeds where TTE scores higher. The CI is the 95% block "
-              "bootstrap on offset 0 alone (seed 42 for random, by point), so it need not contain the mean gap. kNN on raw "
-              "coordinates is the lookup baseline.\n")
+    md.append(
+        "Same embeddings, same folds. TTE, SatCLIP L40 and gap (TTE minus SatCLIP L40) are means over all grid offsets "
+        "(blocks) or seeds (random); 'ahead' counts the offsets or seeds where TTE scores higher. The CI is the 95% block "
+        "bootstrap on offset 0 alone (seed 42 for random, by point), so it need not contain the mean gap. kNN on raw "
+        "coordinates is the lookup baseline.\n"
+    )
     md.append("| task | split | probe | TTE | SatCLIP L40 | gap | 95% CI | ahead | kNN on coords |")
     md.append("|---|---|---|---|---|---|---|---|---|")
     verdict = []
@@ -79,19 +91,31 @@ def e3_sections(e0, e1, h):
                 ci = _ci(h, k, df.probe.iloc[0], s)
                 cis = f"[{h.fmt(k, ci[1])}, {h.fmt(k, ci[2])}]" if ci else ""
                 c, _ = _cell(h, k, coords, "coords", s)
-                md.append(f"| {h.LABEL[k]} | {s if s == 'random' else s + ' km'} | {pname} | {h.fmt(k, a)} | {h.fmt(k, b)} | "
-                          f"{h.fmt(k, a - b)} | {cis} | {_ahead(df, k, s)} | {h.fmt(k, c) if c == c else ''} |")
+                md.append(
+                    f"| {h.LABEL[k]} | {s if s == 'random' else s + ' km'} | {pname} | {h.fmt(k, a)} | {h.fmt(k, b)} | "
+                    f"{h.fmt(k, a - b)} | {cis} | {_ahead(df, k, s)} | {h.fmt(k, c) if not np.isnan(c) else ''} |"
+                )
                 big = str(BIG.get(k, 1000))
                 if s == big:
-                    verdict.append(dict(task=k, probe=pname, gap=a - b, lo=ci[1] if ci else np.nan, hi=ci[2] if ci else np.nan,
-                                        ahead=_ahead(df, k, s)))
+                    verdict.append(
+                        {
+                            "task": k,
+                            "probe": pname,
+                            "gap": a - b,
+                            "lo": ci[1] if ci else np.nan,
+                            "hi": ci[2] if ci else np.nan,
+                            "ahead": _ahead(df, k, s),
+                        }
+                    )
     md.append("")
 
     # ---------------- pre-registered decision rule at the largest shared block size
     v = pd.DataFrame(verdict)
     md.append("## Pre-registered rule: does 'TTE beats SatCLIP L40 under large blocks' hold under every probe?\n")
-    md.append("Rule (PREREGISTRATION.md): the sign must hold on every grid offset, under the ridge probe and the kNN probe, "
-              "with the block-bootstrap CI excluding zero. Checked at 1000 km (global tasks) and 100 km (housing).\n")
+    md.append(
+        "Rule (PREREGISTRATION.md): the sign must hold on every grid offset, under the ridge probe and the kNN probe, "
+        "with the block-bootstrap CI excluding zero. Checked at 1000 km (global tasks) and 100 km (housing).\n"
+    )
     md.append("| task | " + " | ".join(v.probe.unique()) + " | rule met? |")
     md.append("|---|" + "---|" * (v.probe.nunique() + 1))
     for k in h.ORDER:
@@ -104,7 +128,9 @@ def e3_sections(e0, e1, h):
             x = r.loc[pname]
             n_ahead, n_tot = (int(t) for t in x.ahead.split("/"))
             sig = x.lo > 0 if x.lo == x.lo else None
-            cells.append(f"{h.fmt(k, x.gap)} ({x.ahead}{', CI>0' if sig else (', CI spans 0' if sig is False else '')})")
+            cells.append(
+                f"{h.fmt(k, x.gap)} ({x.ahead}{', CI>0' if sig else (', CI spans 0' if sig is False else '')})"
+            )
             if pname in ("ridge (paper protocol)", "kNN on embeddings"):
                 ok &= (n_ahead == n_tot) and bool(sig)
         md.append(f"| {h.LABEL[k]} | " + " | ".join(cells) + f" | {'yes' if ok else 'no'} |")
@@ -114,12 +140,14 @@ def e3_sections(e0, e1, h):
     knn = probes.get("kNN on embeddings")
     if knn is not None:
         md.append("## How much a kNN readout adds over the linear readout, per encoder\n")
-        md.append("kNN-on-embeddings score minus ridge score (same folds). A large value means the information is in the "
-                  "embedding but a global linear map cannot read it out.\n")
+        md.append(
+            "kNN-on-embeddings score minus ridge score (same folds). A large value means the information is in the "
+            "embedding but a global linear map cannot read it out.\n"
+        )
         md.append("| task | split | TTE: kNN − ridge | SatCLIP L40: kNN − ridge |")
         md.append("|---|---|---|---|")
         for k in h.ORDER:
-            for s in (["random", "100", "250", "1000"] if k != "housing" else ["random", "25", "100"]):
+            for s in ["random", "100", "250", "1000"] if k != "housing" else ["random", "25", "100"]:
                 cells = []
                 for enc in ("tte", "satclip_l40"):
                     a, na = _cell(h, k, knn, enc, s)
@@ -144,19 +172,23 @@ def e3_sections(e0, e1, h):
     hx = _read(h, "e3_h3")
     if hx is not None:
         md.append("## E3c: H3 hexagon blocks instead of square equal-area blocks (ridge; kNN for coords)\n")
-        md.append("| task | H3 res | median km to nearest label | TTE | SatCLIP L40 | SatCLIP L10 | kNN on coords | TTE − L40 | TTE − L10 |")
+        md.append(
+            "| task | H3 res | median km to nearest label | TTE | SatCLIP L40 | SatCLIP L10 | kNN on coords | TTE − L40 | TTE − L10 |"
+        )
         md.append("|---|---|---|---|---|---|---|---|---|")
         for k in h.ORDER:
             for res in sorted(hx[hx.task == k].split_res.unique(), reverse=True):
                 r = hx[(hx.task == k) & (hx.split_res == res)].set_index("encoder")
                 sc = r.score
-                md.append(f"| {h.LABEL[k]} | {int(res)} | {r.median_nn_km.median():.0f} | {h.fmt(k, sc['tte'])} | {h.fmt(k, sc['satclip_l40'])} | "
-                          f"{h.fmt(k, sc['satclip_l10'])} | {h.fmt(k, sc['coords'])} | {h.fmt(k, sc['tte'] - sc['satclip_l40'])} | "
-                          f"{h.fmt(k, sc['tte'] - sc['satclip_l10'])} |")
+                md.append(
+                    f"| {h.LABEL[k]} | {int(res)} | {r.median_nn_km.median():.0f} | {h.fmt(k, sc['tte'])} | {h.fmt(k, sc['satclip_l40'])} | "
+                    f"{h.fmt(k, sc['satclip_l10'])} | {h.fmt(k, sc['coords'])} | {h.fmt(k, sc['tte'] - sc['satclip_l40'])} | "
+                    f"{h.fmt(k, sc['tte'] - sc['satclip_l10'])} |"
+                )
         md.append("")
 
     md += e4_section(h, ridge)
-    fig4(h, probes)
+    fig3(h, probes)
     return md
 
 
@@ -168,40 +200,52 @@ def e4_section(h, ridge):
     d = pd.concat(parts)
     d = d.assign(setting=_setting(d))
     allr = pd.concat([d, ridge[ridge.probe == "ridge"]])
-    md = ["## E4 (added after E3, not pre-registered): where in TTE does linear readability appear?\n",
-          "Ridge probe (paper protocol) on each stage of the TTE location encoder, same folds. "
-          "Stages: soft-Voronoi site embedding `w @ E` (384-d) → after semantic-register attention (512-d) → after the residual "
-          "MLP, normalized (the released 512-d embedding). kNN on the released embedding is the readability ceiling.\n"]
+    md = [
+        "## E4 (added after E3, not pre-registered): where in TTE does linear readability appear?\n",
+        "Ridge probe (paper protocol) on each stage of the TTE location encoder, same folds. "
+        "Stages: soft-Voronoi site embedding `w @ E` (384-d) → after semantic-register attention (512-d) → after the residual "
+        "MLP, normalized (the released 512-d embedding). kNN on the released embedding is the readability ceiling.\n",
+    ]
     st = h.OUT / "e4_tte_assignment_stats.csv"
     if st.exists():
         s = pd.read_csv(st)
         g = s[s.task != "housing"]
-        md.append(f"Soft assignment: a location's effective number of sites (1/Σw²) has median {g.neff_median.median():.0f} "
-                  f"(10th–90th pct {g.neff_p10.median():.0f}–{g.neff_p90.median():.0f}) and the largest single weight has "
-                  f"median {g.wmax_median.median():.3f}, on the global tasks. Recomputed final embeddings match the cached ones "
-                  f"exactly (max |diff| {s.max_abs_diff_vs_cached_tte.max():.1g}).\n")
+        md.append(
+            f"Soft assignment: a location's effective number of sites (1/Σw²) has median {g.neff_median.median():.0f} "
+            f"(10th–90th pct {g.neff_p10.median():.0f}–{g.neff_p90.median():.0f}) and the largest single weight has "
+            f"median {g.wmax_median.median():.3f}, on the global tasks. Recomputed final embeddings match the cached ones "
+            f"exactly (max |diff| {s.max_abs_diff_vs_cached_tte.max():.1g}).\n"
+        )
     knn = _read(h, "e3_knnemb")
     knn = knn.assign(setting=_setting(knn)) if knn is not None else None
     md.append("| task | split | site embedding | + registers | + MLP (released) | SatCLIP L40 | kNN on released TTE |")
     md.append("|---|---|---|---|---|---|---|")
     for k in h.ORDER:
-        for s in (["random", "1000"] if k != "housing" else ["random", "100"]):
+        for s in ["random", "1000"] if k != "housing" else ["random", "100"]:
             cells = [_cell(h, k, allr, e, s)[0] for e in ("tte_site", "tte_reg", "tte", "satclip_l40")]
-            if cells[0] != cells[0]:
+            if np.isnan(cells[0]):
                 continue
             kn = _cell(h, k, knn, "tte", s)[0] if knn is not None else np.nan
-            md.append(f"| {h.LABEL[k]} | {s if s == 'random' else s + ' km'} | " + " | ".join(h.fmt(k, c) for c in cells) +
-                      f" | {h.fmt(k, kn) if kn == kn else ''} |")
+            md.append(
+                f"| {h.LABEL[k]} | {s if s == 'random' else s + ' km'} | "
+                + " | ".join(h.fmt(k, c) for c in cells)
+                + f" | {h.fmt(k, kn) if not np.isnan(kn) else ''} |"
+            )
     md.append("")
     return md
 
 
-def fig4(h, probes):
+def fig3(h, probes):
     import matplotlib.pyplot as plt
     from matplotlib.lines import Line2D
+
     tasks = [t for t in h.ORDER if t != "housing"]
-    cols = {"ridge (paper protocol)": "#2a78d6", "kNN on embeddings": "#eb6834", "MLP, untuned defaults": "#1baf7a",
-            "MLP, tuned (grouped inner CV)": "#eda100"}
+    cols = {
+        "ridge (paper protocol)": "#2a78d6",
+        "kNN on embeddings": "#eb6834",
+        "MLP, untuned defaults": "#1baf7a",
+        "MLP, tuned (grouped inner CV)": "#eda100",
+    }
     xs = ["random", "100", "250", "1000"]
     fig, axes = plt.subplots(1, len(tasks), figsize=(14, 3.1))
     for ax, k in zip(axes, tasks):
@@ -217,13 +261,15 @@ def fig4(h, probes):
             if np.isfinite(g).any():
                 ax.plot(range(len(xs)), g, "-o", color=col, lw=2, ms=5, mec="white", mew=1, label=pname)
         ax.set_xticks(range(len(xs)), ["rand.", "100", "250", "1000"])
-        ax.set_title(h.LABEL[k].replace(" (acc)", " (pts)").replace(" (R²)", " (R²)"), fontsize=9.5, color=h.INK, loc="left")
+        ax.set_title(
+            h.LABEL[k].replace(" (acc)", " (pts)").replace(" (R²)", " (R²)"), fontsize=9.5, color=h.INK, loc="left"
+        )
         ax.set_xlabel("block size (km)", fontsize=8.5, color=h.INK2)
     axes[0].set_ylabel("TTE minus SatCLIP L40", fontsize=8.5, color=h.INK2)
     handles = [Line2D([], [], color=c, lw=2, marker="o", mec="white", label=p) for p, c in cols.items() if p in probes]
     fig.legend(handles=handles, frameon=False, fontsize=8.5, loc="lower center", ncol=4, labelcolor=h.INK)
     fig.tight_layout(rect=(0, 0.09, 1, 1))
-    fig.savefig(h.FIG / "fig4_gap_by_probe.png", dpi=200)
+    fig.savefig(h.FIG / "fig3_gap_by_probe.png", dpi=200)
     plt.close(fig)
 
 
@@ -235,8 +281,10 @@ def e2_sections(h):
     e2 = pd.read_csv(f)
     a = e2[e2.subset == "all"]
     md.append("## E2: label-free trust scores (AURC gain over random abstention; higher is better)\n")
-    md.append("D0 = distance to nearest training label; D1 = dissimilarity index in embedding space (Meyer & Pebesma style); "
-              "D2 = local embedding sensitivity (25 km). Offset 0. D1 − D0 CI is the 95% block bootstrap.\n")
+    md.append(
+        "D0 = distance to nearest training label; D1 = dissimilarity index in embedding space (Meyer & Pebesma style); "
+        "D2 = local embedding sensitivity (25 km). Offset 0. D1 − D0 CI is the 95% block bootstrap.\n"
+    )
     md.append("| task | block | encoder | D0 | D1 | D2 | D1 − D0 | 95% CI |")
     md.append("|---|---|---|---|---|---|---|---|")
     wins = []
@@ -247,26 +295,34 @@ def e2_sections(h):
                 if r.empty:
                     continue
                 d1 = r.loc["D1_emb_DI"]
-                wins.append(dict(task=k, enc=enc, gain=d1.gainD1_minus_D0, lo=d1.ci_lo, hi=d1.ci_hi))
-                md.append(f"| {h.LABEL[k]} | {int(b)} km | {h.NAME[enc]} | {r.loc['D0_geo_km'].aurc_gain:.3f} | {d1.aurc_gain:.3f} | "
-                          f"{r.loc['D2_emb_sens'].aurc_gain:.3f} | {d1.gainD1_minus_D0:+.3f} | [{d1.ci_lo:+.3f}, {d1.ci_hi:+.3f}] |")
+                wins.append({"task": k, "enc": enc, "gain": d1.gainD1_minus_D0, "lo": d1.ci_lo, "hi": d1.ci_hi})
+                md.append(
+                    f"| {h.LABEL[k]} | {int(b)} km | {h.NAME[enc]} | {r.loc['D0_geo_km'].aurc_gain:.3f} | {d1.aurc_gain:.3f} | "
+                    f"{r.loc['D2_emb_sens'].aurc_gain:.3f} | {d1.gainD1_minus_D0:+.3f} | [{d1.ci_lo:+.3f}, {d1.ci_hi:+.3f}] |"
+                )
     w = pd.DataFrame(wins)
     g = w[w.task != "housing"]
-    md.append(f"\nGlobal tasks, {len(g)} task × block × encoder cases: D1 better than D0 with CI above 0 in {(g.lo > 0).sum()}, "
-              f"CI spanning 0 in {((g.lo <= 0) & (g.hi >= 0)).sum()}, D1 worse with CI below 0 in {(g.hi < 0).sum()}. "
-              "By encoder: " + "; ".join(f"{h.NAME[e]} {(r.lo > 0).sum()}/{len(r)}" for e, r in g.groupby("enc")) + ".\n")
+    md.append(
+        f"\nGlobal tasks, {len(g)} task × block × encoder cases: D1 better than D0 with CI above 0 in {(g.lo > 0).sum()}, "
+        f"CI spanning 0 in {((g.lo <= 0) & (g.hi >= 0)).sum()}, D1 worse with CI below 0 in {(g.hi < 0).sum()}. "
+        "By encoder: " + "; ".join(f"{h.NAME[e]} {(r.lo > 0).sum()}/{len(r)}" for e, r in g.groupby("enc")) + ".\n"
+    )
 
     f5 = h.OUT / "e2_h5_site_density.csv"
     if f5.exists():
         h5 = pd.read_csv(f5)
         md.append("## E2 / H5: is TTE's per-block advantage associated with learned-site density?\n")
-        md.append("Per held-out block: number of TTE learned sites within 500 km vs the TTE − SatCLIP L40 score on that block "
-                  "(ridge). Spearman with 95% bootstrap CI over blocks; mean advantage by site-density tercile.\n")
+        md.append(
+            "Per held-out block: number of TTE learned sites within 500 km vs the TTE − SatCLIP L40 score on that block "
+            "(ridge). Spearman with 95% bootstrap CI over blocks; mean advantage by site-density tercile.\n"
+        )
         md.append("| task | block | blocks | Spearman | 95% CI | adv. low density | mid | high |")
         md.append("|---|---|---|---|---|---|---|---|")
         for _, r in h5.iterrows():
-            md.append(f"| {h.LABEL[r.task]} | {int(r.block_km)} km | {int(r.n_blocks)} | {r.spearman_density_adv:+.3f} | "
-                      f"[{r.ci_lo:+.3f}, {r.ci_hi:+.3f}] | {h.fmt(r.task, r.adv_low_density)} | {h.fmt(r.task, r.adv_mid_density)} | "
-                      f"{h.fmt(r.task, r.adv_high_density)} |")
+            md.append(
+                f"| {h.LABEL[r.task]} | {int(r.block_km)} km | {int(r.n_blocks)} | {r.spearman_density_adv:+.3f} | "
+                f"[{r.ci_lo:+.3f}, {r.ci_hi:+.3f}] | {h.fmt(r.task, r.adv_low_density)} | {h.fmt(r.task, r.adv_mid_density)} | "
+                f"{h.fmt(r.task, r.adv_high_density)} |"
+            )
         md.append("")
     return md

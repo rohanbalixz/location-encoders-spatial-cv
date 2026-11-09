@@ -1,0 +1,9 @@
+# Minimal environment for the unit tests and lint checks: no torch, no data downloads.
+numpy==2.4.6
+pandas==3.1.1
+scipy==1.17.1
+scikit-learn==1.9.1
+joblib==1.6.0
+h3==4.5.0
+pytest==9.2.0
+ruff==0.17.4

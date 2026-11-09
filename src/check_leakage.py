@@ -6,6 +6,7 @@ For every task, block size and grid offset:
   - at the finest block size (offset 0), no exact coordinate is shared across a fold.
 Then the saved out-of-fold kNN and MLP block predictions are checked to cover every point.
 """
+
 import glob
 import os
 import sys
@@ -16,7 +17,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent.parent
 os.chdir(ROOT)
 sys.path.insert(0, str(ROOT / "src"))
-from spatial_cv import BLOCK_KM, TASKS, load_task, make_split  # noqa: E402
+from spatial_cv import BLOCK_KM, TASKS, load_task, make_split
 
 
 def coords_shared(lonlat, tr, te):
@@ -46,11 +47,15 @@ def main():
         print(task, "ok" if not bad else "PROBLEMS", flush=True)
 
     # saved out-of-fold predictions: every point was predicted by some fold
-    files = sorted(glob.glob("outputs/points/*__knn_emb__kindblock*")) + sorted(glob.glob("outputs/points/*__mlp__kindblock*"))
+    files = sorted(glob.glob("outputs/points/*__knn_emb__kindblock*")) + sorted(
+        glob.glob("outputs/points/*__mlp__kindblock*")
+    )
     for f in files:
         z = np.load(f)
         assert (z["fold"] >= 0).all(), f
-    print(f"saved kNN/MLP block predictions checked: {len(files)} files;", "no problems" if not bad else f"{bad} problems")
+    print(
+        f"saved kNN/MLP block predictions checked: {len(files)} files;", "no problems" if not bad else f"{bad} problems"
+    )
     return bad
 
 
