@@ -12,7 +12,7 @@ The random split mostly measures interpolation. There, kNN on raw latitude/longi
 
 ## 1. Reproduction gate (E0): passed on 6 of 7 tasks
 
-California Housing is the only task with exactly the paper's data. The paper's appendix reports a single 80/20 split with seed 42. With that seed I get TTE 0.536 and SatCLIP L40 0.404, against the paper's 0.532 and 0.400: the same +0.132 gap. Averaged over seeds 42–46, as `eval_range.py --n_seeds 5` does by default, I get 0.526 and 0.396. SatCLIP L10 averages 0.352, so the paper's SatCLIP row matches L40.
+California Housing is the only task with exactly the paper's data. It reproduces closely: averaged over seeds 42–46, TTE scores 0.526 and SatCLIP L40 0.396, against the paper's 0.532 and 0.400. The gap ranges from +0.123 to +0.135 across seeds, against the paper's +0.132. The paper's appendix describes one split with seed 42, while the released `eval_range.py` averages seeds 42–46 by default and calls that the paper protocol. My seeds index a NumPy permutation, not the PyTorch split in the paper's code, so no seed here reproduces the paper's exact split. SatCLIP L10 averages 0.352, so the paper's SatCLIP row matches L40.
 
 The other six tasks use labels rebuilt from public sources (Ecoregions2017, Natural Earth, WorldClim, GHS-POP), so their absolute values differ from the paper's. For example, on Biome I get 86.6 against the paper's 77.8. The pre-registered gate asked for the same TTE vs SatCLIP ordering and a gap of similar size. The ordering matches on six of seven tasks. It fails on EcoRegion, where the paper has SatCLIP ahead (69.3 against 67.4) and these labels put TTE ahead (71.8 against 67.6).
 
@@ -24,7 +24,7 @@ The other six tasks use labels rebuilt from public sources (Ecoregions2017, Natu
 | Temperature | +0.121 | +0.088 |
 | Elevation | +0.173 | +0.168 |
 | Population | +0.106 | +0.082 |
-| California Housing | +0.132 | +0.130 (+0.132 with seed 42) |
+| California Housing | +0.132 | +0.130 (+0.123 to +0.135 over seeds) |
 
 ## 2. The random split measures lookup (H2)
 
