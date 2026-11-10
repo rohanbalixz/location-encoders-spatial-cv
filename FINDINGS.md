@@ -190,7 +190,7 @@ I cached stages 2 and 3 and ran the same ridge probe on each, with the same fold
 - **The register stage adds little under a linear probe:** +0.5 to +2.4 points, or +0.004 to +0.054 R². This says nothing about the registers' role in image alignment during training, which I did not test.
 - **On the random split, the bare site embedding is mixed against SatCLIP L40** under ridge. It is close on Biome and Population, lower on EcoRegion (53.0 against 67.6), Elevation and Housing, and higher on Country and Temperature.
 - **At 1000 km, the bare site embedding already beats SatCLIP L40's final embedding** under ridge on Biome (73.1 against 69.7), EcoRegion, Country (74.7 against 51.1) and Temperature. It does not on Elevation or Population. So a linear readout of the smooth site mixture extrapolates better than a linear readout of SatCLIP L40, before TTE's MLP is applied.
-- **At 1000 km, TTE's ridge score is close to its own kNN score** (Biome 79.7 against 80.4; Elevation 0.788 against 0.796). Far from labels, the released embedding is close to fully linearly readable. SatCLIP L40 is not.
+- **At 1000 km, TTE's ridge score is close to its own kNN score** (Biome 79.7 against 80.4; Elevation 0.788 against 0.796). On the random split it falls short of kNN by 5.9 points and 0.078 R². SatCLIP L40's ridge score falls well short of its kNN score at every distance: on Elevation by 0.248 R² on the random split and 0.195 at 1000 km.
 
 This is descriptive. It locates where readability appears inside TTE, but it is not an ablation: no model was retrained.
 
